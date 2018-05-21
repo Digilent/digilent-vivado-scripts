@@ -1,0 +1,8 @@
+# Blacklist everything
+/*
+
+# Whitelist this stuff
+!*.tcl
+!*.py
+!README.md
+!.gitignore
