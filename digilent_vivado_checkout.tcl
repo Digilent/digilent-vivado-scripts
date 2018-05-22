@@ -26,25 +26,15 @@ set_param board.repoPaths [list $board_dir/new/board_files]
 load_features core
 enable_beta_device* 
 
-# Capture board information for the project
-source ./project_info.tcl
-set board_file_name [get_digilent_board_file]
-set obj [get_boards -filter "NAME == $board_file_name"]
-if {[llength $obj] != 1} {
-	puts "ERROR: [llength $obj] boards found with name matching \"$board_file_name\""
-}
-set obj [get_board_components -of_objects [lindex $obj 0] -filter "NAME =~ *part0*"]
-if {[llength $obj] != 1} {
-	puts "ERROR: [llength $obj] board components found with name matching \"*part0*\""
-}
-set board_part_name [get_property part_name [lindex $obj 0]]
-
 # Create project
 create_project $proj_name $working_dir
 
+# Capture board information for the project
+source ./project_info.tcl
+
 # Set project properties (using proc declared in project_info.tcl)
 set obj [get_projects $proj_name]
-set_digilent_project_properties $obj $board_part_name $board_file_name
+set_digilent_project_properties $obj
 
 # Uncomment the following 3 lines to greatly increase build speed while working with IP cores (and/or block diagrams)
 set_property "corecontainer.enable" "0" $obj
