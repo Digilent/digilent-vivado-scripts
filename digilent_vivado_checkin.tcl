@@ -26,7 +26,7 @@ if {[llength $bd_files] == 1} {
 	set tcl_filename $proj_dir/src/bd/system.tcl
 	puts "INFO: Checking in system.tcl to version control."
 	write_bd_tcl -force $tcl_filename
-} elseif {[llength $bd_files > 1} {
+} elseif {[llength $bd_files > 1]} {
 	# TODO
 	puts "ERROR: This script cannot handle projects containing more than one block design!"
 } else {
