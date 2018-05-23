@@ -6,20 +6,89 @@
 set orig_dir [pwd]
 set proj_dir [file normalize ../[file dirname [info script]]]
 set proj_name [file tail $proj_dir]
-set src_dir $proj_dir/src
-set repo_dir $proj_dir/repo
-set sdk_dir $proj_dir/sdk
-set board_dir $proj_dir/vivado-boards
-set working_dir [file normalize $proj_dir/proj]
 
-# Move into working directory
+# Check if project working directory exists
+if {[file exists $proj_dir/proj] == 0} {
+	file mkdir $proj_dir/proj
+}
+if {[file exists $proj_dir/proj/.keep] == 0} {
+	close [open $proj_dir/proj/.keep "w"]
+}
+
+# Move into working directory and open the XPR (or fail and log an error)
 puts "INFO: Checking project \"$proj_name.xpr\" into version control."
-cd $working_dir
-
+cd $proj_dir/proj
 open_project $proj_name.xpr
+
+# Check repo to see if it matches expected format. Create missing directories and .keep files
+# INFO: This block makes the creation of a template repository unnecessary.
+if {[file exists $proj_dir/src] == 0} {
+	file mkdir $proj_dir/src
+}
+if {[file exists $proj_dir/src/bd] == 0} {
+	file mkdir $proj_dir/src/bd
+}
+if {[file exists $proj_dir/src/bd/.keep] == 0} {
+	close [open $proj_dir/src/bd/.keep "w"]
+}
+if {[file exists $proj_dir/src/constraints] == 0} {
+	file mkdir $proj_dir/src/constraints
+}
+if {[file exists $proj_dir/src/constraints/.keep] == 0} {
+	close [open $proj_dir/src/constraints/.keep "w"]
+}
+if {[file exists $proj_dir/src/hdl] == 0} {
+	file mkdir $proj_dir/src/hdl
+}
+if {[file exists $proj_dir/src/hdl/.keep] == 0} {
+	close [open $proj_dir/src/hdl/.keep "w"]
+}
+if {[file exists $proj_dir/src/ip] == 0} {
+	file mkdir $proj_dir/src/ip
+}
+if {[file exists $proj_dir/src/ip/.keep] == 0} {
+	close [open $proj_dir/src/ip/.keep "w"]
+}
+if {[file exists $proj_dir/src/other] == 0} {
+	file mkdir $proj_dir/src/other
+}
+if {[file exists $proj_dir/src/other/.keep] == 0} {
+	close [open $proj_dir/src/other/.keep "w"]
+}
+
+if {[file exists $proj_dir/repo] == 0} {
+	file mkdir $proj_dir/repo
+}
+if {[file exists $proj_dir/repo/local] == 0} {
+	file mkdir $proj_dir/repo/local
+}
+if {[file exists $proj_dir/repo/local/.keep] == 0} {
+	close [open $proj_dir/repo/local/.keep "w"]
+}
+if {[file exists $proj_dir/repo/cache] == 0} {
+	file mkdir $proj_dir/repo/cache
+}
+if {[file exists $proj_dir/repo/cache/.keep] == 0} {
+	close [open $proj_dir/repo/cache/.keep "w"]
+}
+
+if {[file exists $proj_dir/sdk] == 0} {
+	file mkdir $proj_dir/sdk
+}
+if {[file exists $proj_dir/sdk/.keep] == 0} {
+	close [open $proj_dir/sdk/.keep "w"]
+}
+
+if {[file exists $proj_dir/sdk] == 0} {
+	file mkdir $proj_dir/sdk
+}
+if {[file exists $proj_dir/sdk/.keep] == 0} {
+	close [open $proj_dir/sdk/.keep "w"]
+}
 
 # Save source files, including block design tcl script
 # WARNING: This script does not capture any non-xdc files for block-design projects
+# TODO: Add support for "Add Module" IPI feature
 set bd_files [get_files -of_objects [get_filesets sources_1] -filter "NAME =~ *.bd"]
 if {[llength $bd_files] == 1} {
 	open_bd_design [lindex $bd_files 0]
