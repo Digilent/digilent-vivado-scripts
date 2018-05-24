@@ -146,7 +146,6 @@ puts "INFO: Checking in project_info.tcl to version control."
 set file_name $proj_dir/proj/project_info.tcl
 set file_obj [open $file_name "w"]
 puts $file_obj "# This is an automatically generated file used by digilent_vivado_checkout.tcl to set project options"
-puts $file_obj "proc get_digilent_board_file {} {"
 puts $file_obj "proc set_digilent_project_properties {project_obj} {"
 puts $file_obj "	set_property \"board_part\" \"$board_part\" \$project_obj"
 puts $file_obj "	set_property \"part\" \"$part\" \$project_obj"
