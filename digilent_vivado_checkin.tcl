@@ -1,152 +1,122 @@
+foreach arg $argv {
+	puts $arg
+}
+
 # Collect local sources, move them to ../src/<category>
 # Collect sdk project & BSP & dummy hardware platform, and move them to ../sdk
 
 # TODO: handle SDK projects.
 
-set orig_dir [pwd]
-set proj_dir [file normalize ../[file dirname [info script]]]
-set proj_name [file tail $proj_dir]
+set xpr_path [file normalize [lindex $argv 0]]
+set repo_path [file normalize [lindex $argv 1]]
+set proj_file [file tail $xpr_path]
 
-# Check if project working directory exists
-if {[file exists $proj_dir/proj] == 0} {
-	file mkdir $proj_dir/proj
-}
-if {[file exists $proj_dir/proj/.keep] == 0} {
-	close [open $proj_dir/proj/.keep "w"]
-}
+puts "INFO: Checking project \"$proj_file\" into version control."
+open_project $xpr_path
 
-# Move into working directory and open the XPR (or fail and log an error)
-puts "INFO: Checking project \"$proj_name.xpr\" into version control."
-cd $proj_dir/proj
-open_project $proj_name.xpr
+set required_dirs [list 			\
+	$repo_path/proj					\
+	$repo_path/src 					\
+	$repo_path/src/bd 				\
+	$repo_path/src/constraints 		\
+	$repo_path/src/ip 				\
+	$repo_path/src/hdl 				\
+	$repo_path/src/others 			\
+	$repo_path/repo 					\
+	$repo_path/repo/local 			\
+	$repo_path/repo/cache 			\
+	$repo_path/sdk					\
+]
+set required_files [list 			\
+	$repo_path/proj/.keep				\
+	$repo_path/src/bd/.keep			\
+	$repo_path/src/constraints/.keep	\
+	$repo_path/src/ip/.keep			\
+	$repo_path/src/hdl/.keep			\
+	$repo_path/src/others/.keep		\
+	$repo_path/repo/local/.keep		\
+	$repo_path/repo/cache/.keep		\
+	$repo_path/sdk/.keep				\
+]
+set files [list]
 
-# Check repo to see if it matches expected format. Create missing directories and .keep files
-# INFO: This block makes the creation of a template repository unnecessary.
-if {[file exists $proj_dir/src] == 0} {
-	file mkdir $proj_dir/src
+# Create any missing required directories and files
+foreach d $required_dirs {
+	if {[file exists $d] == 0} {
+		file mkdir $d
+	}
 }
-if {[file exists $proj_dir/src/bd] == 0} {
-	file mkdir $proj_dir/src/bd
-}
-if {[file exists $proj_dir/src/bd/.keep] == 0} {
-	close [open $proj_dir/src/bd/.keep "w"]
-}
-if {[file exists $proj_dir/src/constraints] == 0} {
-	file mkdir $proj_dir/src/constraints
-}
-if {[file exists $proj_dir/src/constraints/.keep] == 0} {
-	close [open $proj_dir/src/constraints/.keep "w"]
-}
-if {[file exists $proj_dir/src/hdl] == 0} {
-	file mkdir $proj_dir/src/hdl
-}
-if {[file exists $proj_dir/src/hdl/.keep] == 0} {
-	close [open $proj_dir/src/hdl/.keep "w"]
-}
-if {[file exists $proj_dir/src/ip] == 0} {
-	file mkdir $proj_dir/src/ip
-}
-if {[file exists $proj_dir/src/ip/.keep] == 0} {
-	close [open $proj_dir/src/ip/.keep "w"]
-}
-if {[file exists $proj_dir/src/other] == 0} {
-	file mkdir $proj_dir/src/other
-}
-if {[file exists $proj_dir/src/other/.keep] == 0} {
-	close [open $proj_dir/src/other/.keep "w"]
-}
-
-if {[file exists $proj_dir/repo] == 0} {
-	file mkdir $proj_dir/repo
-}
-if {[file exists $proj_dir/repo/local] == 0} {
-	file mkdir $proj_dir/repo/local
-}
-if {[file exists $proj_dir/repo/local/.keep] == 0} {
-	close [open $proj_dir/repo/local/.keep "w"]
-}
-if {[file exists $proj_dir/repo/cache] == 0} {
-	file mkdir $proj_dir/repo/cache
-}
-if {[file exists $proj_dir/repo/cache/.keep] == 0} {
-	close [open $proj_dir/repo/cache/.keep "w"]
-}
-
-if {[file exists $proj_dir/sdk] == 0} {
-	file mkdir $proj_dir/sdk
-}
-if {[file exists $proj_dir/sdk/.keep] == 0} {
-	close [open $proj_dir/sdk/.keep "w"]
-}
-
-if {[file exists $proj_dir/sdk] == 0} {
-	file mkdir $proj_dir/sdk
-}
-if {[file exists $proj_dir/sdk/.keep] == 0} {
-	close [open $proj_dir/sdk/.keep "w"]
+foreach f $required_files {
+	if {[file exists $f] == 0} {
+		close [open $f "w"]
+	}
 }
 
 # Save source files, including block design tcl script
 # WARNING: This script does not capture any non-xdc files for block-design projects
-# TODO: Add support for "Add Module" IPI feature
 set bd_files [get_files -of_objects [get_filesets sources_1] -filter "NAME =~ *.bd"]
-if {[llength $bd_files] == 1} {
-	open_bd_design [lindex $bd_files 0]
-	set tcl_filename $proj_dir/src/bd/system.tcl
-	puts "INFO: Checking in system.tcl to version control."
-	write_bd_tcl -force $tcl_filename
-} elseif {[llength $bd_files] > 1} {
-	# TODO
+if {[llength $bd_files] > 1} {
 	puts "ERROR: This script cannot handle projects containing more than one block design!"
+} elseif {[llength $bd_files] == 1} {
+	open_bd_design [lindex $bd_files 0]
+	puts "INFO: Checking in system.tcl to version control."
+	write_bd_tcl -force $repo_path/src/bd/system.tcl
+	# TODO: Add support for "Add Module" IPI features (check in hdl files included in sources_1, but not any ip fileset)
 } else {
 	foreach source_file [get_files -of_objects [get_filesets sources_1]] {
 		set origin [get_property name $source_file]
 		if {[file extension $origin] == ".vhd"} {
-			set target $proj_dir/src/hdl/[file tail $origin]
+			set subdir hdl
 		} elseif {[file extension $origin] == ".v"} {
-			set target $proj_dir/src/hdl/[file tail $origin]
+			set subdir hdl
 		} elseif {[file extension $origin] != ".bd"} {
-			set target $proj_dir/src/other/[file tail $origin]
+			set subdir other
 		}
-		puts "INFO: Checking in [file tail $target] to version control."
+		puts "INFO: Checking in [file tail $origin] to version control."
+		set target $repo_path/src/$subdir/[file tail $origin]
 		if {$origin != $target} {
 			file copy -force $origin $target
 		}
 	}
+	# TODO: foreach file in /src/hdl & /src/others, if it wasn't just checked in, delete it
+	
 	foreach ip [get_ips] {
 		set origin [get_property ip_file $ip]
 		set ipname [get_property name $ip]
-		set dir $proj_dir/src/ip/$ipname
+		set dir $repo_path/src/ip/$ipname
 		if {[file exists $dir] == 0} {
 			file mkdir $dir
 		}
 		set target $dir/[file tail $origin]
-		puts "INFO: Checking in [file tail $target] to version control."
+		puts "INFO: Checking in [file tail $origin] to version control."
 		if {$origin != $target} {
 			file copy -force $origin $target
 		}
 	}
+	# TODO: foreach file in /src/ip, if it wasn't just checked in, delete it
 }
 foreach constraint_file [get_files -of_objects [get_filesets constrs_1]] {
 	set origin [get_property name $constraint_file]
-	set target $proj_dir/src/constraints/[file tail $origin]
-	puts "INFO: Checking in [file tail $target] to version control."
+	set target $repo_path/src/constraints/[file tail $origin]
+	puts "INFO: Checking in [file tail $origin] to version control."
 	if {$origin != $target} {
 		file copy -force $origin $target
 	}
 }
+# TODO: foreach file in /src/constraints, if it wasn't just checked in, delete it
 
 # Save project-specific settings into project_info.tcl
+# TODO: will break if multiple projects are open
+set proj_obj [get_projects [file rootname $proj_file]]
 set board_part [current_board_part]
-set part [get_property part [get_projects $proj_name]]
-set default_lib [get_property default_lib [get_projects $proj_name]]
-set simulator_language [get_property simulator_language [get_projects $proj_name]]
-set target_language [get_property target_language [get_projects $proj_name]]
+set part [get_property part $proj_obj]
+set default_lib [get_property default_lib $proj_obj]
+set simulator_language [get_property simulator_language $proj_obj]
+set target_language [get_property target_language $proj_obj]
 puts "INFO: Checking in project_info.tcl to version control."
-set file_name $proj_dir/proj/project_info.tcl
+set file_name $repo_path/proj/project_info.tcl
 set file_obj [open $file_name "w"]
 puts $file_obj "# This is an automatically generated file used by digilent_vivado_checkout.tcl to set project options"
-puts $file_obj "proc get_digilent_board_file {} {"
 puts $file_obj "proc set_digilent_project_properties {project_obj} {"
 puts $file_obj "	set_property \"board_part\" \"$board_part\" \$project_obj"
 puts $file_obj "	set_property \"part\" \"$part\" \$project_obj"
@@ -155,6 +125,3 @@ puts $file_obj "	set_property \"simulator_language\" \"$simulator_language\" \$p
 puts $file_obj "	set_property \"target_language\" \"$target_language\" \$project_obj"
 puts $file_obj "}"
 close $file_obj
-
-# Return to directory that the script was called from
-cd $orig_dir
