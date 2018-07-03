@@ -23,7 +23,8 @@ def do_checkin(script_dir, config, args):
 		vivado_cmd = os.path.join(os.path.abspath(config['DEFAULT']['VivadoInstallPath']), args.version, 'bin', 'vivado')
 	script_path = os.path.join(script_dir, 'digilent_vivado_checkin.tcl')
 	if args.xpr_path == 'none':
-		xpr_path = os.path.abspath(os.path.join(script_dir, '..', 'proj'))
+		xpr_path = os.path.abspath(os.path.join(script_dir, '..'))
+		xpr_path = os.path.join(xpr_path, 'proj', '%s.xpr' % os.path.dirname(xpr_path))
 	else:
 		xpr_path = os.path.join(os.path.abspath(config['DEFAULT']['ProjectBasePath']), args.xpr_path)
 	if default_repo_path != args.repo_path:
@@ -36,11 +37,11 @@ def do_checkin(script_dir, config, args):
 	xpr_path = xpr_path.replace('\\', '/')
 	repo_path = repo_path.replace('\\', '/')
 	
-	if xpr_path[:-3] != '.xpr':
+	if xpr_path[-4:] != '.xpr':
 		print('Error: xpr_path argument must end in .xpr')
 		sys.exit()
 	
-	if not accept_warning('Files and directories contained in %s may be deleted. Do you wish to continue?' % repo_path):
+	if not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % repo_path):
 		sys.exit()
 		
 	print('Checking in project %s to repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
@@ -60,26 +61,29 @@ def do_checkout(script_dir, config, args):
 		vivado_cmd = 'vivado'
 	else:
 		vivado_cmd = os.path.join(os.path.abspath(config['DEFAULT']['VivadoInstallPath']), args.version, 'bin', 'vivado')
+		
 	script_path = os.path.join(script_dir, 'digilent_vivado_checkout.tcl')
-	if args.xpr_path == 'none':
-		xpr_path = os.path.abspath(os.path.join(script_dir, '..', 'proj'))
-	else:
-		xpr_path = os.path.join(os.path.abspath(config['DEFAULT']['ProjectBasePath']), args.xpr_path)
+	
 	if default_repo_path != args.repo_path:
 		repo_path = os.path.join(os.path.abspath(config['DEFAULT']['GithubBasePath']), args.repo_path)
 	else:
 		repo_path = args.repo_path
+		
+	if args.xpr_path == 'none':
+		xpr_path = os.path.abspath(os.path.join(repo_path, 'proj', '%s.xpr' % os.path.basename(repo_path)))
+	else:
+		xpr_path = os.path.join(os.path.abspath(config['DEFAULT']['ProjectBasePath']), args.xpr_path)
 	
 	vivado_cmd = vivado_cmd.replace('\\', '/')
 	script_path = script_path.replace('\\', '/')
 	xpr_path = xpr_path.replace('\\', '/')
 	repo_path = repo_path.replace('\\', '/')
 	
-	if xpr_path[:-3] != '.xpr':
+	if xpr_path[-4:] != '.xpr':
 		print('Error: xpr_path argument must end in .xpr')
 		sys.exit()
 		
-	if not accept_warning('Files and directories contained in %s may be deleted. Do you wish to continue?' % os.path.dirname(xpr_path)):
+	if not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % os.path.dirname(xpr_path)):
 		sys.exit()
 	
 	print('Checking out project %s from repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
@@ -100,10 +104,17 @@ def do_release(script_dir, config, args):
 	else:
 		vivado_cmd = os.path.join(os.path.abspath(config['DEFAULT']['VivadoInstallPath']), args.version, 'bin', 'vivado')
 	script_path = os.path.join(script_dir, 'digilent_vivado_release.tcl')
+	
+	if default_repo_path != args.repo_path:
+		repo_path = os.path.join(os.path.abspath(config['DEFAULT']['GithubBasePath']), args.repo_path)
+	else:
+		repo_path = args.repo_path
+		
 	if args.xpr_path == 'none':
-		xpr_path = os.path.abspath(os.path.join(script_dir, '..', 'proj'))
+		xpr_path = os.path.abspath(os.path.join(repo_path, 'proj', '%s.xpr' % os.path.basename(repo_path)))
 	else:
 		xpr_path = os.path.join(os.path.abspath(config['DEFAULT']['ProjectBasePath']), args.xpr_path)
+	
 	zip_path = os.path.join(os.path.abspath(config['DEFAULT']['ProjectBasePath']), args.zip_path)
 		
 	vivado_cmd = vivado_cmd.replace('\\', '/')
@@ -111,7 +122,7 @@ def do_release(script_dir, config, args):
 	xpr_path = xpr_path.replace('\\', '/')
 	zip_path = zip_path.replace('\\', '/')
 	
-	if xpr_path[:-3] != '.xpr':
+	if xpr_path[-4:] != '.xpr':
 		print('Error: xpr_path argument must end in .xpr')
 		sys.exit()
 		
@@ -162,7 +173,8 @@ parser_release.set_defaults(func=do_release)
 # Required Args
 parser_release.add_argument('zip_path', metavar='zip_path', type=str, help='Location and name to give release archive ZIP file')
 # Optional Args
-parser_release.add_argument('-xpr', dest='xpr_path', type=str, help='Path to XPR file from %s' % (config['DEFAULT']['ProjectBasePath']))
+parser_release.add_argument('-xpr', dest='xpr_path', type=str, default='none', help='Path to XPR file from %s' % (config['DEFAULT']['ProjectBasePath']))
+parser_release.add_argument('-repo', dest='repo_path', type=str, default=default_repo_path, help='Path to target repository from %s/ - default assumes this script is in a submodule underneath the target repo' % (config['DEFAULT']['GithubBasePath']))
 parser_release.add_argument('-v', dest='version', type=str, default='none', help='Vivado version number 20##.# - used to construct absolute path to vivado command. default uses \'vivado\'')
 
 # Parse Arguments
