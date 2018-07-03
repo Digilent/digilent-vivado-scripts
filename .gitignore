@@ -2,6 +2,7 @@
 /*
 
 # Whitelist this stuff
+!config.ini
 !*.tcl
 !*.py
 !README.md

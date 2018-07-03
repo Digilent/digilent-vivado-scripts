@@ -5,7 +5,7 @@ import sys
 import configparser
 import argparse
 
-DEBUG_NO_VIVADO = True
+DEBUG_NO_VIVADO = False
 
 def accept_warning(s):
 	c = ''
