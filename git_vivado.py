@@ -141,9 +141,22 @@ def do_release(script_dir, config, args):
 	
 # Parse CONFIG.INI
 script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+project_name = os.path.basename(os.path.abspath(os.path.join(script_dir, '..')))
 config = configparser.ConfigParser()
 config.read("%s\config.ini" % script_dir)
+
+# Default arguments assume that this script is contained in a submodule within the target repository
 default_repo_path = os.path.abspath(os.path.join(script_dir, '..'))
+default_xpr_path='../proj/%s.xpr' % (project_name) # relative to scripts submodule directory
+default_zip_path=''
+
+print('defaults:')
+print('    script_dir:', script_dir)
+print('    project_name:', project_name)
+print('    default_repo_path:', default_repo_path)
+print('    default_xpr_path:', default_xpr_path)
+print('    default_zip_path:', default_zip_path)
+sys.exit()
 
 # Parse SYS.ARGV
 parser = argparse.ArgumentParser(description='Handles vivado project git repo operations')

@@ -3,13 +3,13 @@
 set xpr_path [file normalize [lindex $argv 0]]
 set repo_path [file normalize [lindex $argv 1]]
 
-puts "INFO: Creating new project \"[file tail $xpr_path]\" in [file dirname $xpr_path]"
+puts "INFO: Creating new project \"[file tail $xpr_path]\" in [file dirname $xpr_path]/proj"
 
 # Create project
-create_project $[file tail $xpr_path] $proj_dir/proj
+create_project $[file tail $xpr_path] $xpr_path/proj
 
 # Capture board information for the project
-source $proj_dir/proj/project_info.tcl
+source $xpr_path/project_info.tcl
 
 # Set project properties (using proc declared in project_info.tcl)
 set obj [get_projects $proj_name]
@@ -18,7 +18,7 @@ set_digilent_project_properties $obj
 # Uncomment the following 3 lines to greatly increase build speed while working with IP cores (and/or block diagrams)
 set_property "corecontainer.enable" "0" $obj
 set_property "ip_cache_permissions" "read write" $obj
-set_property "ip_output_repo" "[file normalize "$proj_dir/repo/cache"]" $obj
+set_property "ip_output_repo" "[file normalize "$xpr_path/repo/cache"]" $obj
 
 # Create 'sources_1' fileset (if not found)
 if {[string equal [get_filesets -quiet sources_1] ""]} {
@@ -32,24 +32,24 @@ if {[string equal [get_filesets -quiet constrs_1] ""]} {
 
 # Set IP repository paths
 set obj [get_filesets sources_1]
-set_property "ip_repo_paths" "[file normalize $proj_dir/repo]" $obj
+set_property "ip_repo_paths" "[file normalize $xpr_path/repo]" $obj
 
 # Refresh IP Repositories
 update_ip_catalog -rebuild
 
 # Add hardware description language sources
-add_files -quiet -norecurse $proj_dir/src/hdl
+add_files -quiet -norecurse $xpr_path/src/hdl
 
 # Add IPs
 # TODO: handle IP core-container files
-add_files -quiet [glob -nocomplain $proj_dir/src/ip/*/*.xci]
+add_files -quiet [glob -nocomplain $xpr_path/src/ip/*/*.xci]
 
 # Add constraints
-add_files -quiet -norecurse -fileset constrs_1 $proj_dir/src/constraints
+add_files -quiet -norecurse -fileset constrs_1 $xpr_path/src/constraints
 
 # Recreate block design
-if {[file exist [file normalize $proj_dir/src/bd/system.tcl]]} {
-    source $proj_dir/src/bd/system.tcl
+if {[file exist [file normalize $xpr_path/src/bd/system.tcl]]} {
+    source $xpr_path/src/bd/system.tcl
 
     # Generate the wrapper 
     set design_name [get_bd_designs]

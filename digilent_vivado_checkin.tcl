@@ -114,7 +114,7 @@ set default_lib [get_property default_lib $proj_obj]
 set simulator_language [get_property simulator_language $proj_obj]
 set target_language [get_property target_language $proj_obj]
 puts "INFO: Checking in project_info.tcl to version control."
-set file_name $repo_path/proj/project_info.tcl
+set file_name $repo_path/project_info.tcl
 set file_obj [open $file_name "w"]
 puts $file_obj "# This is an automatically generated file used by digilent_vivado_checkout.tcl to set project options"
 puts $file_obj "proc set_digilent_project_properties {project_obj} {"
