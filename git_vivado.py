@@ -40,7 +40,7 @@ def do_checkout(args):
 	global DEBUG_NO_VIVADO
 	
 	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
-	script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkin.tcl').replace('\\', '/')
+	script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkout.tcl').replace('\\', '/')
 	xpr_path    = args['xpr_path'].replace('\\', '/')
 	repo_path   = args['repo_path'].replace('\\', '/')
 	
@@ -61,7 +61,7 @@ def do_release(script_dir, config, ):
 	global DEBUG_NO_VIVADO
 	
 	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
-	script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkin.tcl').replace('\\', '/')
+	script_path = os.path.join(args['script_dir'], 'digilent_vivado_release.tcl').replace('\\', '/')
 	xpr_path    = args['xpr_path'].replace('\\', '/')
 	repo_path   = args['repo_path'].replace('\\', '/')
 	zip_path    = args['zip_path'].replace('\\', '/')
