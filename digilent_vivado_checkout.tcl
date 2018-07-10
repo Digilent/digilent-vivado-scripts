@@ -8,15 +8,15 @@ set vivado_year [lindex [split $vivado_version "."] 0]
 puts "INFO: Creating new project \"[file tail $xpr_path]\" in [file dirname $repo_path]/proj"
 
 # Create project
-set proj_name [file tail $xpr_path]
-create_project $proj_name $repo_path/proj
+create_project [file tail $xpr_path] $repo_path/proj
 
 # Capture board information for the project
 source $repo_path/project_info.tcl
 
 # Set project properties (using proc declared in project_info.tcl)
-set obj [get_projects $proj_name]
+set obj [get_projects [lindex [split [file tail $xpr_path] "."] 0]]
 set_digilent_project_properties $obj
+set board_part_name
 
 # Uncomment the following 3 lines to greatly increase build speed while working with IP cores (and/or block diagrams)
 set_property "corecontainer.enable" "0" $obj
@@ -94,6 +94,4 @@ set_property "steps.route_design.args.directive" "RuntimeOptimized" $obj
 # Set the current impl run
 current_run -implementation [get_runs impl_1]
 
-# Return to original calling location
-cd $orig_dir
-puts "INFO: Project created: $proj_name"
+puts "INFO: Project created: [file tail $xpr_path]"
