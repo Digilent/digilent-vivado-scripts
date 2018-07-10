@@ -5,7 +5,7 @@ import sys
 import configparser
 import argparse
 
-DEBUG_NO_VIVADO = True
+DEBUG_NO_VIVADO = False
 
 def accept_warning(s):
 	c = ''
@@ -36,7 +36,7 @@ def do_checkin(args):
 	else:
 		os.system("%s -mode batch -source %s -notrace -tclargs %s %s" % (vivado_cmd, script_path, xpr_path, repo_path))
 	
-def do_checkout(script_dir, config, args):
+def do_checkout(args):
 	global DEBUG_NO_VIVADO
 	
 	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
@@ -57,7 +57,7 @@ def do_checkout(script_dir, config, args):
 	else:
 		os.system("%s -mode batch -source %s -notrace -tclargs %s %s" % (vivado_cmd, script_path, xpr_path, repo_path))
 	
-def do_release(script_dir, config, args):
+def do_release(script_dir, config, ):
 	global DEBUG_NO_VIVADO
 	
 	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
