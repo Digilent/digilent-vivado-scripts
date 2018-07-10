@@ -131,10 +131,10 @@ if __name__ == "__main__":
 		print("Please select a subcommand to execute. See this command's help page")
 		sys.exit()
 	
-	if hasattr(args, 'repo_path') and args.repo_path != default_repo_path:
+	if hasattr(args, 'repo_path'):
 		funcargs['repo_path'] = os.path.abspath(os.path.join(os.getcwd(), args.repo_path))
 		
-	if hasattr(args, 'xpr_path') and args.xpr_path != default_xpr_path:
+	if hasattr(args, 'xpr_path'):
 		if args.xpr_path[-4:] != '.xpr':
 			print('Error: xpr_path argument must end in .xpr')
 			sys.exit()
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 			print('Error: cannot check out repo when project exists; Please clean out the %s/proj directory' % (repo_path))
 			sys.exit()
 	
-	if hasattr(args, 'zip_path') and args.zip_path != default_zip_path:
+	if hasattr(args, 'zip_path'):
 		#if not os.path.dirname(args.zip_path):
 			# TODO: add warning/confirmation to create directory structure
 			# TODO: recursively create missing directories in zip_path
@@ -161,5 +161,5 @@ if __name__ == "__main__":
 		if not os.path.isfile(funcargs['vivado_cmd']):
 			print('Error: Vivado not installed at %s' % funcargs['vivado_cmd'])
 			sys.exit()
-	
+			
 	args.func(funcargs)
