@@ -4,17 +4,18 @@ set xpr_path [file normalize [lindex $argv 0]]
 set repo_path [file normalize [lindex $argv 1]]
 set vivado_version [lindex $argv 2]
 set vivado_year [lindex [split $vivado_version "."] 0]
+set proj_name [lindex [split [file tail $xpr_path] "."] 0]
 
-puts "INFO: Creating new project \"[file tail $xpr_path]\" in [file dirname $repo_path]/proj"
+puts "INFO: Creating new project \"$proj_name\" in [file dirname $repo_path]/proj"
 
 # Create project
-create_project [file tail $xpr_path] $repo_path/proj
+create_project $proj_name [file dirname $xpr_path]
 
 # Capture board information for the project
 source $repo_path/project_info.tcl
 
 # Set project properties (using proc declared in project_info.tcl)
-set obj [get_projects [lindex [split [file tail $xpr_path] "."] 0]]
+set obj [get_projects $proj_name]
 set_digilent_project_properties $obj
 set board_part_name
 
