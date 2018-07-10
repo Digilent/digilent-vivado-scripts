@@ -6,7 +6,8 @@ set repo_path [file normalize [lindex $argv 1]]
 puts "INFO: Creating new project \"[file tail $xpr_path]\" in [file dirname $xpr_path]/proj"
 
 # Create project
-create_project $[file tail $xpr_path] $xpr_path/proj
+set proj_name [file tail $xpr_path]
+create_project $proj_name $xpr_path/proj
 
 # Capture board information for the project
 source $xpr_path/project_info.tcl
