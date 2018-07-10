@@ -17,7 +17,7 @@ source $repo_path/project_info.tcl
 # Set project properties (using proc declared in project_info.tcl)
 set obj [get_projects $proj_name]
 set_digilent_project_properties $obj
-set board_part_name
+set board_part_name [get_property "board_part" $obj]
 
 # Uncomment the following 3 lines to greatly increase build speed while working with IP cores (and/or block diagrams)
 set_property "corecontainer.enable" "0" $obj
@@ -95,4 +95,4 @@ set_property "steps.route_design.args.directive" "RuntimeOptimized" $obj
 # Set the current impl run
 current_run -implementation [get_runs impl_1]
 
-puts "INFO: Project created: [file tail $xpr_path]"
+puts "INFO: Project created: [file tail $proj_name]"
