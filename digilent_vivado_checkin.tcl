@@ -8,8 +8,9 @@ foreach arg $argv {
 # TODO: handle SDK projects.
 
 set xpr_path [file normalize [lindex $argv 0]]
-set repo_path [file normalize [lindex $argv 1]]
 set proj_file [file tail $xpr_path]
+set repo_path [file normalize [lindex $argv 1]]
+set vivado_version [lindex $argv 2]; # unused
 
 puts "INFO: Checking project \"$proj_file\" into version control."
 open_project $xpr_path

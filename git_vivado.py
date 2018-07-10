@@ -1,4 +1,6 @@
 # PYTHON 3.X.X REQUIRED!!!
+# TODO: ctrl-f for other TODOs
+# TODO: pass vivado version to TCL scripts
 
 import os
 import sys
@@ -22,6 +24,7 @@ def do_checkin(args):
 	script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkin.tcl').replace('\\', '/')
 	xpr_path    = args['xpr_path'].replace('\\', '/')
 	repo_path   = args['repo_path'].replace('\\', '/')
+	version     = args['version'].replace('\\', '/')
 	
 	if not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % repo_path):
 		sys.exit()
@@ -33,8 +36,9 @@ def do_checkin(args):
 		print ('script_path: %s' % script_path)
 		print ('xpr_path: %s' % xpr_path)
 		print ('repo_path: %s' % repo_path)
+		print ('version: %s' % version)
 	else:
-		os.system("%s -mode batch -source %s -notrace -tclargs %s %s" % (vivado_cmd, script_path, xpr_path, repo_path))
+		os.system("%s -mode batch -source %s -notrace -tclargs %s %s %s" % (vivado_cmd, script_path, xpr_path, repo_path, version))
 	
 def do_checkout(args):
 	global DEBUG_NO_VIVADO
@@ -43,6 +47,7 @@ def do_checkout(args):
 	script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkout.tcl').replace('\\', '/')
 	xpr_path    = args['xpr_path'].replace('\\', '/')
 	repo_path   = args['repo_path'].replace('\\', '/')
+	version     = args['version'].replace('\\', '/')
 	
 	if not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % os.path.dirname(xpr_path)):
 		sys.exit()
@@ -54,8 +59,9 @@ def do_checkout(args):
 		print ('script_path: %s' % script_path)
 		print ('xpr_path: %s' % xpr_path)
 		print ('repo_path: %s' % repo_path)
+		print ('version: %s' % version)
 	else:
-		os.system("%s -mode batch -source %s -notrace -tclargs %s %s" % (vivado_cmd, script_path, xpr_path, repo_path))
+		os.system("%s -mode batch -source %s -notrace -tclargs %s %s %s" % (vivado_cmd, script_path, xpr_path, repo_path, version))
 	
 def do_release(script_dir, config, ):
 	global DEBUG_NO_VIVADO
@@ -65,6 +71,7 @@ def do_release(script_dir, config, ):
 	xpr_path    = args['xpr_path'].replace('\\', '/')
 	repo_path   = args['repo_path'].replace('\\', '/')
 	zip_path    = args['zip_path'].replace('\\', '/')
+	version     = args['version'].replace('\\', '/')
 		
 	if not accept_warning('If %s exists, it will be overwritten. Do you wish to continue?' % zip_path):
 		sys.exit()
@@ -76,8 +83,10 @@ def do_release(script_dir, config, ):
 		print ('script_path: %s' % script_path)
 		print ('xpr_path: %s' % xpr_path)
 		print ('zip_path: %s' % zip_path)
+		print ('repo_path: %s' % repo_path)
+		print ('version: %s' % version)
 	else:
-		os.system("%s -mode batch -source %s -notrace -tclargs %s %s" % (vivado_cmd, script_path, xpr_path, zip_path))
+		os.system("%s -mode batch -source %s -notrace -tclargs %s %s %s" % (vivado_cmd, script_path, xpr_path, repo_path, version))
 
 if __name__ == "__main__":
 	# Parse CONFIG.INI
@@ -157,9 +166,10 @@ if __name__ == "__main__":
 		funcargs['zip_path'] = os.path.abspath(os.path.join(os.getcwd(), args.zip_path))
 	
 	if hasattr(args, 'version'):
-		funcargs['vivado_cmd'] = os.path.join(os.path.abspath(config['DEFAULT']['VivadoInstallPath']), args.version, 'bin', 'vivado')
+		funcargs['vivado_cmd'] = os.path.join(os.path.abspath(config['DEFAULT']['VivadoInstallPath']), args.version, 'bin', 'vivado'),
+		funcargs['version'] = args.version
 		if not os.path.isfile(funcargs['vivado_cmd']):
 			print('Error: Vivado not installed at %s' % funcargs['vivado_cmd'])
 			sys.exit()
-			
+	
 	args.func(funcargs)
