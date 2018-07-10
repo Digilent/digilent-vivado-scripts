@@ -8,7 +8,7 @@ import configparser
 import argparse
 
 DEBUG_NO_VIVADO = False
-DEBUG_VIVADO_NO_TRACE = False
+DEBUG_VIVADO_TCL_TRACE = False
 
 def accept_warning(s):
 	c = ''
@@ -20,7 +20,7 @@ def accept_warning(s):
 	# def do_checkin(script_dir, args):
 def do_checkin(args):
 	global DEBUG_NO_VIVADO
-	global DEBUG_VIVADO_NO_TRACE
+	global DEBUG_VIVADO_TCL_TRACE
 	
 	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
 	script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkin.tcl').replace('\\', '/')
@@ -40,12 +40,12 @@ def do_checkin(args):
 		print ('repo_path: %s' % repo_path)
 		print ('version: %s' % version)
 	else:
-		notrace = ' -notrace' if DEBUG_VIVADO_NO_TRACE else ''
+		notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
 		os.system("%s -mode batch -source %s%s -tclargs %s %s %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version))
 	
 def do_checkout(args):
 	global DEBUG_NO_VIVADO
-	global DEBUG_VIVADO_NO_TRACE
+	global DEBUG_VIVADO_TCL_TRACE
 	
 	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
 	script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkout.tcl').replace('\\', '/')
@@ -65,12 +65,12 @@ def do_checkout(args):
 		print ('repo_path: %s' % repo_path)
 		print ('version: %s' % version)
 	else:
-		notrace = ' -notrace' if DEBUG_VIVADO_NO_TRACE else ''
+		notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
 		os.system("%s -mode batch -source %s%s -tclargs %s %s %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version))
 	
 def do_release(script_dir, config, ):
 	global DEBUG_NO_VIVADO
-	global DEBUG_VIVADO_NO_TRACE
+	global DEBUG_VIVADO_TCL_TRACE
 	
 	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
 	script_path = os.path.join(args['script_dir'], 'digilent_vivado_release.tcl').replace('\\', '/')
@@ -92,7 +92,7 @@ def do_release(script_dir, config, ):
 		print ('repo_path: %s' % repo_path)
 		print ('version: %s' % version)
 	else:
-		notrace = ' -notrace' if DEBUG_VIVADO_NO_TRACE else ''
+		notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
 		os.system("%s -mode batch -source %s%s -tclargs %s %s %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version))
 
 if __name__ == "__main__":

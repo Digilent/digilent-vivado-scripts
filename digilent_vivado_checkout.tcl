@@ -15,9 +15,9 @@ create_project $proj_name [file dirname $xpr_path]
 source $repo_path/project_info.tcl
 
 # Set project properties (using proc declared in project_info.tcl)
+set_digilent_project_properties $proj_name
 set obj [get_projects $proj_name]
-set_digilent_project_properties $obj
-set board_part_name [get_property "board_part" $obj]
+set part_name [get_property "part" $obj]
 
 # Uncomment the following 3 lines to greatly increase build speed while working with IP cores (and/or block diagrams)
 set_property "corecontainer.enable" "0" $obj
@@ -65,13 +65,13 @@ if {[file exist [file normalize $repo_path/src/bd/system.tcl]]} {
 
 # Create 'synth_1' run (if not found)
 if {[string equal [get_runs -quiet synth_1] ""]} {
-    create_run -name synth_1 -part $board_part_name -flow {Vivado Synthesis $vivado_year} -strategy "Vivado Synthesis Defaults" -constrset constrs_1
+    create_run -name synth_1 -part $part_name -flow {Vivado Synthesis $vivado_year} -strategy "Vivado Synthesis Defaults" -constrset constrs_1
 } else {
     set_property strategy "Vivado Synthesis Defaults" [get_runs synth_1]
     set_property flow "Vivado Synthesis $vivado_year" [get_runs synth_1]
 }
 set obj [get_runs synth_1]
-set_property "part" $board_part_name $obj
+set_property "part" $part_name $obj
 set_property "steps.synth_design.args.flatten_hierarchy" "none" $obj
 set_property "steps.synth_design.args.directive" "RuntimeOptimized" $obj
 set_property "steps.synth_design.args.fsm_extraction" "off" $obj
@@ -81,13 +81,13 @@ current_run -synthesis [get_runs synth_1]
 
 # Create 'impl_1' run (if not found)
 if {[string equal [get_runs -quiet impl_1] ""]} {
-    create_run -name impl_1 -part $board_part_name -flow {Vivado Implementation $vivado_year} -strategy "Vivado Implementation Defaults" -constrset constrs_1 -parent_run synth_1
+    create_run -name impl_1 -part $part_name -flow {Vivado Implementation $vivado_year} -strategy "Vivado Implementation Defaults" -constrset constrs_1 -parent_run synth_1
 } else {
     set_property strategy "Vivado Implementation Defaults" [get_runs impl_1]
     set_property flow "Vivado Implementation $vivado_year" [get_runs impl_1]
 }
 set obj [get_runs impl_1]
-set_property "part" $board_part_name $obj
+set_property "part" $part_name $obj
 set_property "steps.opt_design.args.directive" "RuntimeOptimized" $obj
 set_property "steps.place_design.args.directive" "RuntimeOptimized" $obj
 set_property "steps.route_design.args.directive" "RuntimeOptimized" $obj
