@@ -3,7 +3,7 @@
 set xpr_path [file normalize [lindex $argv 0]]
 set repo_path [file normalize [lindex $argv 1]]
 set vivado_version [lindex $argv 2]
-set vivado_year [lindex [split $my_version "."] 0]
+set vivado_year [lindex [split $vivado_version "."] 0]
 
 puts "INFO: Creating new project \"[file tail $xpr_path]\" in [file dirname $repo_path]/proj"
 
