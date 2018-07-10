@@ -166,7 +166,7 @@ if __name__ == "__main__":
 		funcargs['zip_path'] = os.path.abspath(os.path.join(os.getcwd(), args.zip_path))
 	
 	if hasattr(args, 'version'):
-		funcargs['vivado_cmd'] = os.path.join(os.path.abspath(config['DEFAULT']['VivadoInstallPath']), args.version, 'bin', 'vivado'),
+		funcargs['vivado_cmd'] = os.path.join(os.path.abspath(config['DEFAULT']['VivadoInstallPath']), args.version, 'bin', 'vivado')
 		funcargs['version'] = args.version
 		if not os.path.isfile(funcargs['vivado_cmd']):
 			print('Error: Vivado not installed at %s' % funcargs['vivado_cmd'])
