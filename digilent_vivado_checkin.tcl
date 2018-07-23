@@ -55,13 +55,16 @@ foreach f $required_files {
 
 # Save source files, including block design tcl script
 # WARNING: This script does not capture any non-xdc files for block-design projects
-set bd_files [get_files -of_objects [get_filesets sources_1] -filter "NAME =~ *.bd"]
+set bd_files [get_files -of_objects [get_filesets sources_1] -filter "NAME=~*.bd"]
 if {[llength $bd_files] > 1} {
 	puts "ERROR: This script cannot handle projects containing more than one block design!"
 } elseif {[llength $bd_files] == 1} {
-	open_bd_design [lindex $bd_files 0]
-	puts "INFO: Checking in system.tcl to version control."
-	write_bd_tcl -force -make_local $repo_path/src/bd/system.tcl
+	set bd_file [lindex $bd_files 0]
+	open_bd_design $bd_file
+	set bd_name [file tail [file rootname [get_property NAME $bd_file]]]
+	set script_name "$repo_path/src/bd/${bd_name}.tcl"
+	puts "INFO: Checking in ${script_name} to version control."
+	write_bd_tcl -force -make_local $script_name
 	# TODO: Add support for "Add Module" IPI features (check in hdl files included in sources_1, but not any ip fileset)
 } else {
 	foreach source_file [get_files -of_objects [get_filesets sources_1]] {

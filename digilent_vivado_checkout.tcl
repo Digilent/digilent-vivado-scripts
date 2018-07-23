@@ -62,8 +62,9 @@ if {[file exist "[file rootname $xpr_path].srcs/sources_1/bd"] == 0} {
 }
 
 # Recreate block design
-if {[file exist "$repo_path/src/bd/system.tcl"]} {
-	source "$repo_path/src/bd/system.tcl"
+set bd_files [glob "$repo_path/src/bd/*.tcl"]
+if {[llength $bd_files] == 1} {
+	source [lindex $bd_files 0]
 
     # Generate the wrapper 
     set design_name [get_bd_designs]
