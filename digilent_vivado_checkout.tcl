@@ -4,7 +4,7 @@ set xpr_path [file normalize [lindex $argv 0]]
 set repo_path [file normalize [lindex $argv 1]]
 set vivado_version [lindex $argv 2]
 set vivado_year [lindex [split $vivado_version "."] 0]
-set proj_name [file rootname [file tail $xpr_path] 0]
+set proj_name [file rootname [file tail $xpr_path]]
 
 puts "INFO: Creating new project \"$proj_name\" in [file dirname $repo_path]/proj"
 
@@ -51,9 +51,19 @@ add_files -quiet [glob -nocomplain $repo_path/src/ip/*/*.xci]
 # Add constraints
 add_files -quiet -norecurse -fileset constrs_1 $repo_path/src/constraints
 
+if {[file exist "[file rootname $xpr_path].srcs"] == 0} {
+	file mkdir "[file rootname $xpr_path].srcs"
+}
+if {[file exist "[file rootname $xpr_path].srcs/sources_1"] == 0} {
+	file mkdir "[file rootname $xpr_path].srcs/sources_1"
+}
+if {[file exist "[file rootname $xpr_path].srcs/sources_1/bd"] == 0} {
+	file mkdir "[file rootname $xpr_path].srcs/sources_1/bd"
+}
+
 # Recreate block design
-if {[file exist [file normalize $repo_path/src/bd/system.tcl]]} {
-    source $repo_path/src/bd/system.tcl
+if {[file exist "$repo_path/src/bd/system.tcl"]} {
+	source "$repo_path/src/bd/system.tcl"
 
     # Generate the wrapper 
     set design_name [get_bd_designs]

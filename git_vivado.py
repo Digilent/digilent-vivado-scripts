@@ -114,29 +114,29 @@ if __name__ == "__main__":
 	subparsers = parser.add_subparsers(help='sub-command help')
 
 	# Checkin Arguments
-	parser_checkin = subparsers.add_parser('checkin', help='Checks in XPR to REPO')
+	parser_checkin = subparsers.add_parser('checkin', help='Checks in XPR to REPO', formatter_class=argparse.RawTextHelpFormatter)
 	parser_checkin.set_defaults(func=do_checkin)
 	# Optional Args
-	parser_checkin.add_argument('-r', dest='repo_path', type=str, default=default_repo_path, help='Path to target repository from; default = %s' % (default_repo_path))
-	parser_checkin.add_argument('-x', dest='xpr_path', type=str, default=default_xpr_path, help='Path to XPR file; default = %s' % (default_xpr_path))
-	parser_checkin.add_argument('-v', dest='version', type=str, default=default_version, help='Vivado version number 20##.#; default = %s' % (default_version))
+	parser_checkin.add_argument('-r', dest='repo_path', type=str, default=default_repo_path, help='Path to target repository from\nDefault = %s' % (default_repo_path))
+	parser_checkin.add_argument('-x', dest='xpr_path',  type=str, default=default_xpr_path,  help='Path to XPR file\nDefault = %s' % (default_xpr_path))
+	parser_checkin.add_argument('-v', dest='version',   type=str, default=default_version,   help='Vivado version number 20##.#\nDefault = %s' % (default_version))
 
 	# Checkout Arguments
-	parser_checkout = subparsers.add_parser('checkout', help='Checks out XPR from REPO')
+	parser_checkout = subparsers.add_parser('checkout', help='Checks out XPR from REPO', formatter_class=argparse.RawTextHelpFormatter)
 	parser_checkout.set_defaults(func=do_checkout)
 	# Optional Args
-	parser_checkout.add_argument('-r', dest='repo_path', type=str, default=default_repo_path, help='Path to target repository from; default = %s' % (default_repo_path))
-	parser_checkout.add_argument('-x', dest='xpr_path', type=str, default=default_xpr_path, help='Path to XPR file; default = %s' % (default_xpr_path))
-	parser_checkout.add_argument('-v', dest='version', type=str, default=default_version, help='Vivado version number 20##.#; default = %s' % (default_version))
+	parser_checkout.add_argument('-r', dest='repo_path', type=str, default=default_repo_path, help='Path to target repository from\nDefault = %s' % (default_repo_path))
+	parser_checkout.add_argument('-x', dest='xpr_path',  type=str, default=default_xpr_path,  help='Path to XPR file\nDefault = %s' % (default_xpr_path))
+	parser_checkout.add_argument('-v', dest='version',   type=str, default=default_version,   help='Vivado version number 20##.#\nDefault = %s' % (default_version))
 
 	# Release Arguments
-	parser_release = subparsers.add_parser('release', help='Creates release ZIP from XPR')
+	parser_release = subparsers.add_parser('release', help='Creates release ZIP from XPR', formatter_class=argparse.RawTextHelpFormatter)
 	parser_release.set_defaults(func=do_release)
 	# Optional Args
-	parser_release.add_argument('-z', dest='zip_path', type=str, default=default_zip_path, help='Path to new release archive ZIP file; default = %s' % (default_zip_path))
-	parser_release.add_argument('-r', dest='repo_path', type=str, default=default_repo_path, help='Path to target repository from; default = %s' % (default_repo_path))
-	parser_release.add_argument('-x', dest='xpr_path', type=str, default=default_xpr_path, help='Path to XPR file; default = %s' % (default_xpr_path))
-	parser_release.add_argument('-v', dest='version', type=str, default=default_version, help='Vivado version number 20##.#; default = %s' % (default_version))
+	parser_release.add_argument('-z', dest='zip_path',  type=str, default=default_zip_path,  help='Path to new release archive ZIP file\nDefault = %s' % (default_zip_path))
+	parser_release.add_argument('-r', dest='repo_path', type=str, default=default_repo_path, help='Path to target repository from\nDefault = %s' % (default_repo_path))
+	parser_release.add_argument('-x', dest='xpr_path',  type=str, default=default_xpr_path,  help='Path to XPR file\nDefault = %s' % (default_xpr_path))
+	parser_release.add_argument('-v', dest='version',   type=str, default=default_version,   help='Vivado version number 20##.#\nDefault = %s' % (default_version))
 
 	# Parse Arguments
 	args = parser.parse_args()

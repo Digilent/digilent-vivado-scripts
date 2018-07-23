@@ -61,7 +61,7 @@ if {[llength $bd_files] > 1} {
 } elseif {[llength $bd_files] == 1} {
 	open_bd_design [lindex $bd_files 0]
 	puts "INFO: Checking in system.tcl to version control."
-	write_bd_tcl -force $repo_path/src/bd/system.tcl
+	write_bd_tcl -force -make_local $repo_path/src/bd/system.tcl
 	# TODO: Add support for "Add Module" IPI features (check in hdl files included in sources_1, but not any ip fileset)
 } else {
 	foreach source_file [get_files -of_objects [get_filesets sources_1]] {
