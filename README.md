@@ -47,7 +47,7 @@ In order to ensure that any changes to this repository do not break the projects
 8. Create and upload a release ZIP to Github - see "Creating a Release Archive" below.
 
 ### 2. Retargeting an Existing Project to use these Scripts
-1. Clone (or pull) the Vivado project to be retargeted. Use its existing version control system to generate an XPR.
+1. Clone (or pull) the Vivado project to be retargeted. Use its existing version control system to generate an XPR. If relevant, make sure to call "git submodule init" followed by "git submodule update" from a command line interface (git bash) from within the repo directory.
 2. Open the project in Vivado and make any changes necessary (perhaps upgrading IP). When exporting to and launching SDK, make sure to use exported locations and workspaces that are not "Local to Project".
 3. Clone the project repository again in a different location. Remove all files from this directory.
 4. In a command line interface (git bash) cd into the clean repository directory. Call "git submodule add https://github.com/artvvb/digilent-vivado-scripts" (FIXME).
@@ -60,13 +60,14 @@ In order to ensure that any changes to this repository do not break the projects
 ### 3. Making Changes to a Project that uses this Submodule
 1. Clone (or pull) the Vivado project to be changed.
 2. In a command line interface (git bash) cd into the repository directory.
-3. Call "python ./digilent_vivado_scripts/git_vivado.py checkout". This command can be called from anywhere in your filesystem, with the relative path to git_vivado. This will also create a gitignore file for the repository. Default arguments will create the XPR at "\<project repo\>/proj/\<project name\>.xpr".
-4. Open the project in Vivado and make any changes necessary (perhaps upgrading IP or fixing a bug). When exporting to and launching SDK, make sure to use exported locations and workspaces that are not "Local to Project".
-5. Call "python ./digilent_vivado_scripts/git_vivado.py checkin". This command can be called from anywhere in your filesystem, with the relative path to git_vivado changed as required.
-6. If required, in Xilinx SDK, right click on your application project's src folder and select "Export". Use this to copy all of the sources from "\<app\>/src" to "\<project repo\>/sdk/appsrc".
-7. Make sure to update the repo's README as required.
-8. Add, commit, and push your changes.
-9. Create and upload a release ZIP to Github - see "Creating a Release Archive" below.
+3. Call "git submodule init" followed by "git submodule update" in order to get this repositories scripts scripts.
+4. Call "python ./digilent_vivado_scripts/git_vivado.py checkout". This command can be called from anywhere in your filesystem, with the relative path to git_vivado. This will also create a gitignore file for the repository. Default arguments will create the XPR at "\<project repo\>/proj/\<project name\>.xpr".
+5. Open the project in Vivado and make any changes necessary (perhaps upgrading IP or fixing a bug). When exporting to and launching SDK, make sure to use exported locations and workspaces that are not "Local to Project".
+6. Call "python ./digilent_vivado_scripts/git_vivado.py checkin". This command can be called from anywhere in your filesystem, with the relative path to git_vivado changed as required.
+7. If required, in Xilinx SDK, right click on your application project's src folder and select "Export". Use this to copy all of the sources from "\<app\>/src" to "\<project repo\>/sdk/appsrc".
+8. Make sure to update the repo's README as required.
+9. Add, commit, and push your changes.
+10. Create and upload a release ZIP to Github - see "Creating a Release Archive" below.
 
 ### 4. Creating a Release Archive 
 1. With an open Vivado project, make sure that a bitstream has been generated.
