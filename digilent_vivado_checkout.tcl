@@ -51,19 +51,31 @@ add_files -quiet [glob -nocomplain $repo_path/src/ip/*/*.xci]
 # Add constraints
 add_files -quiet -norecurse -fileset constrs_1 $repo_path/src/constraints
 
-if {[file exist "[file rootname $xpr_path].srcs"] == 0} {
-	file mkdir "[file rootname $xpr_path].srcs"
-}
-if {[file exist "[file rootname $xpr_path].srcs/sources_1"] == 0} {
-	file mkdir "[file rootname $xpr_path].srcs/sources_1"
-}
-if {[file exist "[file rootname $xpr_path].srcs/sources_1/bd"] == 0} {
-	file mkdir "[file rootname $xpr_path].srcs/sources_1/bd"
-}
+														 
+											
+ 
+																   
+													  
+ 
+																	  
+														 
+ 
 
 # Recreate block design
-set bd_files [glob "$repo_path/src/bd/*.tcl"]
+set bd_files [glob -nocomplain "$repo_path/src/bd/*.tcl"]
 if {[llength $bd_files] == 1} {
+	# Create local source directory for bd
+	if {[file exist "[file rootname $xpr_path].srcs"] == 0} {
+		file mkdir "[file rootname $xpr_path].srcs"
+	}
+	if {[file exist "[file rootname $xpr_path].srcs/sources_1"] == 0} {
+		file mkdir "[file rootname $xpr_path].srcs/sources_1"
+	}
+	if {[file exist "[file rootname $xpr_path].srcs/sources_1/bd"] == 0} {
+		file mkdir "[file rootname $xpr_path].srcs/sources_1/bd"
+	}
+
+	# recreate bd from file
 	source [lindex $bd_files 0]
 
     # Generate the wrapper 
