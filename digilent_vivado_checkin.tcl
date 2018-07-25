@@ -197,9 +197,6 @@ if {[file exists "$repo_path/.gitignore"] == 0} {
 	puts $file_obj "!src/ip/*/*.xci"
 	puts $file_obj "!src/others/*"
     puts $file_obj ""
-	puts $file_obj "# scripts submodule"
-	puts $file_obj "digilent-vivado-scripts/*"
-    puts $file_obj ""
 	puts $file_obj "# maintain required directories"
 	puts $file_obj "!**/.keep"
 	close $file_obj
