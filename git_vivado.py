@@ -6,6 +6,7 @@ import os
 import sys
 import configparser
 import argparse
+import platform
 
 DEBUG_NO_VIVADO = False
 DEBUG_VIVADO_TCL_TRACE = False
@@ -101,11 +102,13 @@ if __name__ == "__main__":
 	project_name = os.path.basename(os.path.abspath(os.path.join(script_dir, '..')))
 	config = configparser.ConfigParser()
 	config.read("%s\config.ini" % script_dir)
-
+	operating_system = platform.system()
+	config_settings = config[operating_system]
+	
 	# Default arguments assume that this script is contained in a submodule within the target repository
 	default_repo_path = os.path.abspath(os.path.join(script_dir, '..'))
 	default_xpr_path = os.path.abspath(os.path.join(script_dir, '..', 'proj', '%s.xpr' % project_name))
-	default_version = config['DEFAULT']['VivadoVersion']
+	default_version = config_settings['VivadoVersion']
 	releases_dir = os.path.abspath(os.path.join(script_dir, '..', 'releases'))
 	default_zip_path = os.path.abspath(os.path.join(releases_dir, '%s-%s.zip' % (project_name, default_version)))
 
@@ -173,7 +176,7 @@ if __name__ == "__main__":
 		funcargs['zip_path'] = os.path.abspath(os.path.join(os.getcwd(), args.zip_path))
 	
 	if hasattr(args, 'version'):
-		funcargs['vivado_cmd'] = os.path.join(os.path.abspath(config['DEFAULT']['VivadoInstallPath']), args.version, 'bin', 'vivado')
+		funcargs['vivado_cmd'] = os.path.join(os.path.abspath(config_settings['VivadoInstallPath']), args.version, 'bin', 'vivado')
 		funcargs['version'] = args.version
 		if not os.path.isfile(funcargs['vivado_cmd']):
 			print('Error: Vivado not installed at %s' % funcargs['vivado_cmd'])
