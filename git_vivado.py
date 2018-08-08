@@ -29,7 +29,7 @@ def do_checkin(args):
 	repo_path   = args['repo_path'].replace('\\', '/')
 	version     = args['version'].replace('\\', '/')
 	
-	if not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % repo_path):
+	if not args['force'] and not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % repo_path):
 		sys.exit()
 		
 	print('Checking in project %s to repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
@@ -54,7 +54,7 @@ def do_checkout(args):
 	repo_path   = args['repo_path'].replace('\\', '/')
 	version     = args['version'].replace('\\', '/')
 	
-	if not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % os.path.dirname(xpr_path)):
+	if not args['force'] and not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % os.path.dirname(xpr_path)):
 		sys.exit()
 	
 	print('Checking out project %s from repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
@@ -80,7 +80,7 @@ def do_release(script_dir, config, ):
 	zip_path    = args['zip_path'].replace('\\', '/')
 	version     = args['version'].replace('\\', '/')
 		
-	if not accept_warning('If %s exists, it will be overwritten. Do you wish to continue?' % zip_path):
+	if not args['force'] and not accept_warning('If %s exists, it will be overwritten. Do you wish to continue?' % zip_path):
 		sys.exit()
 	
 	print('Creating release %s from project %s' % (os.path.basename(zip_path), os.path.basename(xpr_path)))
@@ -114,6 +114,7 @@ if __name__ == "__main__":
 
 	# Parse SYS.ARGV
 	parser = argparse.ArgumentParser(description='Handles vivado project git repo operations')
+	parser.add_argument('-f', dest='force', default=False, action='store_true', help='Force overwrite of existing files and folders')
 	subparsers = parser.add_subparsers(help='sub-command help')
 
 	# Checkin Arguments
@@ -150,6 +151,9 @@ if __name__ == "__main__":
 		print("Please select a subcommand to execute. See this command's help page")
 		sys.exit()
 	
+	if hasattr(args, 'force'):
+		funcargs['force'] = args.force
+	
 	if hasattr(args, 'repo_path'):
 		funcargs['repo_path'] = os.path.abspath(os.path.join(os.getcwd(), args.repo_path))
 		
@@ -181,5 +185,6 @@ if __name__ == "__main__":
 		if not os.path.isfile(funcargs['vivado_cmd']):
 			print('Error: Vivado not installed at %s' % funcargs['vivado_cmd'])
 			sys.exit()
-	
+#	for key in funcargs:
+#		print(key, ':', funcargs[key])
 	args.func(funcargs)
