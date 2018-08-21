@@ -59,9 +59,14 @@ puts "INFO: Adding constraints"
 add_files -quiet -norecurse -fileset constrs_1 $repo_path/src/constraints
 
 # Recreate block design
-# TODO: handle bd filesets
-set bd_files [glob -nocomplain "$repo_path/src/bd/*.tcl"]
-if {[llength $bd_files] >= 1} {
+# TODO: handle multiple block designs
+set ipi_tcl_files [glob -nocomplain "$repo_path/src/bd/*.tcl"]
+set ipi_bd_files [glob -nocomplain "$repo_path/src/bd/*/*.bd"]
+if {[llength $ipi_tcl_files] > 1} {
+	# TODO: quit and log the error
+	puts "ERROR: This script cannot handle projects containing more than one block design!"
+} elseif {[llength $ipi_tcl_files] == 1} {
+	# Use TCL script to rebuild block design
 	puts "INFO: Rebuilding block design from script"
 	# Create local source directory for bd
 	if {[file exist "[file rootname $xpr_path].srcs"] == 0} {
@@ -73,19 +78,35 @@ if {[llength $bd_files] >= 1} {
 	if {[file exist "[file rootname $xpr_path].srcs/sources_1/bd"] == 0} {
 		file mkdir "[file rootname $xpr_path].srcs/sources_1/bd"
 	}
-
-	# recreate bd from file
-	source [lindex $bd_files 0]
-
-    # Generate the wrapper 
-    set design_name [get_bd_designs]
-    import_files -quiet -force -norecurse [make_wrapper -files [get_files $design_name.bd] -top -force]
+	source [lindex $ipi_tcl_files 0]
+} elseif {[llength $ipi_bd_files] > 1} {
+	# TODO: quit and log the error
+	puts "ERROR: This script cannot handle projects containing more than one block design!"
+} elseif {[llength $ipi_bd_files] == 1} {
+	# Add block design from .bd file and sources
+	puts "INFO: Rebuilding block design from BD fileset"
+	add_files -norecurse -quiet -fileset sources_1 [glob -nocomplain $repo_path/src/bd/*/*.bd]
+	open_bd_design [glob -nocomplain $repo_path/src/bd/*/*.bd]
+	set design_name [get_bd_designs]
+	set file "$repo_path/src/bd/$design_name/$design_name.bd"
+	set file [file normalize $file]
+	set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
+	if { ![get_property "is_locked" $file_obj] } {
+		set_property "synth_checkpoint_mode" "Hierarchical" $file_obj
+	}
+}
+# Generate the wrapper
+set bd_files [get_files -of_objects [get_filesets sources_1] -filter "NAME=~*.bd"]
+if {[llength $bd_files] > 1} {
+	puts "ERROR: This script cannot handle projects containing more than one block design!"
+} elseif {[llength $bd_files] == 1} {
+	set bd_name [get_bd_designs]
+	set bd_file [get_files $bd_name.bd]
+	set wrapper_file [make_wrapper -files $bd_file -top -force]
+    import_files -quiet -force -norecurse $wrapper_file
 
     set obj [get_filesets sources_1]
-    set_property "top" "${design_name}_wrapper" $obj
-} else {
-	puts "INFO: no block design TCL script detected"
-	# TODO: handle adding BD sources from complete fileset
+    set_property "top" "${bd_name}_wrapper" $obj
 }
 
 # Create 'synth_1' run (if not found)
