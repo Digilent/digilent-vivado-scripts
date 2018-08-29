@@ -22,7 +22,7 @@ set required_dirs [list 				\
 	$repo_path/src/constraints 			\
 	$repo_path/src/ip 					\
 	$repo_path/src/hdl 					\
-	$repo_path/src/others 				\
+	$repo_path/src/other 				\
 	$repo_path/repo 					\
 	$repo_path/repo/local 				\
 	$repo_path/repo/cache 				\
@@ -34,7 +34,7 @@ set required_files [list 				\
 	$repo_path/src/constraints/.keep	\
 	$repo_path/src/ip/.keep				\
 	$repo_path/src/hdl/.keep			\
-	$repo_path/src/others/.keep			\
+	$repo_path/src/other/.keep			\
 	$repo_path/repo/local/.keep			\
 	$repo_path/repo/cache/.keep			\
 	$repo_path/sdk/.keep				\
@@ -175,27 +175,16 @@ if {[file exists "$repo_path/.gitignore"] == 0} {
 	puts $file_obj "!src/hdl/*.v"
 	puts $file_obj "!src/hdl/*.vhd"
 	puts $file_obj "!src/ip"
-	puts $file_obj "src/ip/**"
+	puts $file_obj "!src/ip/*"
+	puts $file_obj "src/ip/*/**"
 	puts $file_obj "!src/ip/**/*.xci"
 	puts $file_obj "!src/other"
-	puts $file_obj "src/other/**"
 	puts $file_obj "!src/other/**"
     puts $file_obj ""
 	puts $file_obj "# sdk application sources"
 	puts $file_obj "sdk/**"
 	puts $file_obj "!sdk/appsrc"
 	puts $file_obj "!sdk/appsrc/**"
-    puts $file_obj ""
-	puts $file_obj "# version controlled sources"
-	puts $file_obj "!src/bd/system.tcl"
-	puts $file_obj "src/constraints/*"
-	puts $file_obj "!src/constraints/*.xdc"
-	puts $file_obj "src/hdl/*"
-	puts $file_obj "!src/hdl/*.vhd"
-	puts $file_obj "!src/hdl/*.v"
-	puts $file_obj "src/ip/*/**"
-	puts $file_obj "!src/ip/*/*.xci"
-	puts $file_obj "!src/others/*"
     puts $file_obj ""
 	puts $file_obj "# maintain required directories"
 	puts $file_obj "!**/.keep"
