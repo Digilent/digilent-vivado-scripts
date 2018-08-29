@@ -69,25 +69,27 @@ if {[llength $bd_files] > 1} {
 } else {
 	foreach source_file [get_files -of_objects [get_filesets sources_1]] {
 		set origin [get_property name $source_file]
+		set skip 0
 		if {[file extension $origin] == ".vhd"} {
 			set subdir hdl
 		} elseif {[file extension $origin] == ".v"} {
 			set subdir hdl
 		} elseif {[file extension $origin] != ".bd" && [file extension $origin] != ".xci"} {
 			set subdir other
+		} else {
+			set skip 1
 		}
 		
-		set is_ip_source 0
 		foreach ip [get_ips] {
 			set ip_dir [get_property IP_DIR $ip]
 			set source_length [string length $source_file]
 			set dir_length [string length $ip_dir]
 			if {$source_length >= $dir_length && [string range $source_file 0 $dir_length-1] == $ip_dir} {
-				set is_ip_source 1
+				set skip 1
 			}
 		}
 		
-		if {$is_ip_source == 0} {
+		if {$skip == 0} {
 			puts "INFO: Checking in [file tail $origin] to version control."
 			set target $repo_path/src/$subdir/[file tail $origin]
 			if {[file exists $target] == 0} { # TODO: this may not be safe; remind users to make sure to delete any unused files from version control
