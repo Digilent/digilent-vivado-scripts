@@ -73,7 +73,7 @@ if {[llength $bd_files] > 1} {
 			set subdir hdl
 		} elseif {[file extension $origin] == ".v"} {
 			set subdir hdl
-		} elseif {[file extension $origin] != ".bd"} {
+		} elseif {[file extension $origin] != ".bd" && [file extension $origin] != ".xci"} {
 			set subdir other
 		}
 		
