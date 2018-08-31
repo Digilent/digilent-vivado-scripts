@@ -181,7 +181,7 @@ if {[file exists "$repo_path/.gitignore"] == 0} {
 	puts $file_obj "src/**"
 	puts $file_obj "!src/bd"
 	puts $file_obj "src/bd/**"
-	puts $file_obj "!src/bd/system.tcl"
+	puts $file_obj "!src/bd/*.tcl"
 	puts $file_obj "!src/constraints"
 	puts $file_obj "src/constraints/**"
 	puts $file_obj "!src/constraints/*.xdc"
