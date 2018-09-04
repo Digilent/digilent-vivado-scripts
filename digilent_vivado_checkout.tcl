@@ -95,6 +95,13 @@ if {[llength $ipi_tcl_files] > 1} {
 		set_property "synth_checkpoint_mode" "Hierarchical" $file_obj
 	}
 }
+
+# Make sure IPs are upgraded to the most recent version
+foreach ip [get_ips -filter "IS_LOCKED==1"] {
+	upgrade_ip -vlnv [get_property UPGRADE_VERSIONS $ip] $ip
+	export_ip_user_files -of_objects $ip -no_script -sync -force -quiet
+}
+
 # Generate the wrapper
 set bd_files [get_files -of_objects [get_filesets sources_1] -filter "NAME=~*.bd"]
 if {[llength $bd_files] > 1} {
