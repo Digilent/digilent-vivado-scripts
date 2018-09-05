@@ -78,7 +78,12 @@ if {[llength $ipi_tcl_files] > 1} {
 	if {[file exist "[file rootname $xpr_path].srcs/sources_1/bd"] == 0} {
 		file mkdir "[file rootname $xpr_path].srcs/sources_1/bd"
 	}
+	# Force Non-Remote BD Flow
+	set origin_dir [pwd]
+	cd "[file rootname $xpr_path].srcs/sources_1"
+	set run_remote_bd_flow 0
 	source [lindex $ipi_tcl_files 0]
+	cd $origin_dir
 } elseif {[llength $ipi_bd_files] > 1} {
 	# TODO: quit and log the error
 	puts "ERROR: This script cannot handle projects containing more than one block design!"
