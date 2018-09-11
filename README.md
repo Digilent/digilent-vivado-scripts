@@ -72,6 +72,7 @@ In order to ensure that any changes to this repository do not break the projects
 ### 4. Creating a Release Archive 
 1. With an open Vivado project, make sure that a bitstream has been generated.
 2. Click File -> Project -> Archive. Fill in the fields in the prompt as per the table below then click "OK".
+
 | Field                          | Value                    |
 | ------------------------------ | ------------------------ |
 | Archive name                   | vivado_proj              |
@@ -80,6 +81,7 @@ In order to ensure that any changes to this repository do not break the projects
 | Include configuration settings | unchecked                |
 | Include run results            | checked                  |
 | Include local IP cache results | checked                  |
+
 3. Navigate to the release subdirectory of the project repo and extract vivado_proj.xpr.zip. Rename the resulting folder "vivado_proj" then delete vivado_proj.xpr.zip.
 4. If required, in Xilinx SDK, right click on your application project's src folder and select "Export". Use this to copy all of the sources from "\<app\>/src" to "\<project_repo\>/release/sdk_appsrc".
 5. Copy README.md into the release subdirectory, and make sure that it contains project specific instructions for using the release, especially if any libraries need to be added to the BSP or if compiler settings need to be added to the application project in SDK.
