@@ -101,7 +101,7 @@ if __name__ == "__main__":
 	script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 	project_name = os.path.basename(os.path.abspath(os.path.join(script_dir, '..')))
 	config = configparser.ConfigParser()
-	config.read("%s\config.ini" % script_dir)
+	config.read(os.path.join(script_dir, "config.ini"))
 	operating_system = platform.system()
 	config_settings = config[operating_system]
 	
