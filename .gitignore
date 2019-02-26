@@ -2,6 +2,7 @@
 /*
 
 # Whitelist this stuff
+!License.txt
 !config.ini
 !*.tcl
 !*.py
