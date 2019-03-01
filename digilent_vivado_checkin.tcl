@@ -125,7 +125,7 @@ foreach constraint_file [get_files -of_objects [get_filesets constrs_1]] {
 # Save project-specific settings into project_info.tcl
 # TODO: will break if multiple projects are open
 set proj_obj [get_projects [file rootname $proj_file]]
-set board_part [current_board_part]
+set board_part [current_board_part -quiet]
 set part [get_property part $proj_obj]
 set default_lib [get_property default_lib $proj_obj]
 set simulator_language [get_property simulator_language $proj_obj]
@@ -137,7 +137,9 @@ puts $file_obj "# This is an automatically generated file used by digilent_vivad
 puts $file_obj "proc set_digilent_project_properties {proj_name} {"
 puts $file_obj "    set project_obj \[get_projects \$proj_name\]"
 puts $file_obj "	set_property \"part\" \"$part\" \$project_obj"
-puts $file_obj "	set_property \"board_part\" \"$board_part\" \$project_obj"
+if {$board_part ne ""} {
+    puts $file_obj "	set_property \"board_part\" \"$board_part\" \$project_obj"
+}
 puts $file_obj "	set_property \"default_lib\" \"$default_lib\" \$project_obj"
 puts $file_obj "	set_property \"simulator_language\" \"$simulator_language\" \$project_obj"
 puts $file_obj "	set_property \"target_language\" \"$target_language\" \$project_obj"
