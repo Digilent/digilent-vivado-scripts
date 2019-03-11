@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # PYTHON 3.X.X REQUIRED!!!
-# configparser REQUIRED!!!
 # TODO: ctrl-f for other TODOs
 # TODO: pass vivado version to TCL scripts
 
