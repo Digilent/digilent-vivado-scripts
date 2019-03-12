@@ -11,10 +11,11 @@ puts "INFO: Creating new project \"$proj_name\" in [file dirname $xpr_path]"
 # Create project
 create_project $proj_name [file dirname $xpr_path]
 
+source $repo_path/project_info.tcl
+
 # Capture board information for the project
 puts "INFO: Capturing board information from $repo_path/project_info.tcl"
-source $repo_path/project_info.tcl
-set_digilent_project_properties $proj_name
+set_project_properties_post_create_project $proj_name
 set obj [get_projects $proj_name]
 set part_name [get_property "part" $obj]
 
@@ -35,6 +36,10 @@ if {[string equal [get_filesets -quiet constrs_1] ""]} {
 	puts "INFO: Creating constrs_1 fileset"
     create_fileset -constrset constrs_1
 }
+
+# Capture project-specific IP settings
+puts "INFO: capturing IP-related settings from $repo_path/project_info.tcl"
+set_project_properties_pre_add_repo $proj_name
 
 # Set IP repository paths
 puts "INFO: Setting IP repository paths"
@@ -158,6 +163,10 @@ set_property "steps.route_design.args.directive" "RuntimeOptimized" $obj
 # Set the current impl run
 puts "INFO: Setting current implementation run"
 current_run -implementation [get_runs impl_1]
+
+# Capture project-specific IP settings
+puts "INFO: capturing run settings from $repo_path/project_info.tcl"
+set_project_properties_post_create_runs $proj_name
 
 puts "INFO: Project created: [file tail $proj_name]"
 puts "INFO: Exiting Vivado"
