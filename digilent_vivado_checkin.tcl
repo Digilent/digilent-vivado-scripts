@@ -137,7 +137,7 @@ if {[file exists $repo_path/project_info.tcl] == 0 || $force_overwrite_info_scri
     set file_name $repo_path/project_info.tcl
     set file_obj [open $file_name "w"]
     puts $file_obj "# This is an automatically generated file used by digilent_vivado_checkout.tcl to set project options"
-    puts $file_obj "proc set_digilent_project_properties {proj_name} {"
+    puts $file_obj "proc set_project_properties_post_create_project {proj_name} {"
     puts $file_obj "    set project_obj \[get_projects \$proj_name\]"
     puts $file_obj "	set_property \"part\" \"$part\" \$project_obj"
     if {$board_part ne ""} {
