@@ -23,7 +23,7 @@ set part_name [get_property "part" $obj]
 puts "INFO: Configuring project IP handling properties"
 set_property "corecontainer.enable" "0" $obj
 set_property "ip_cache_permissions" "read write" $obj
-set_property "ip_output_repo" "[file normalize "$repo_path/repo/cache"]" $obj
+set_property "ip_output_repo" "[file normalize "$repo_path/proj/cache"]" $obj
 
 # Create 'sources_1' fileset (if not found)
 if {[string equal [get_filesets -quiet sources_1] ""]} {
