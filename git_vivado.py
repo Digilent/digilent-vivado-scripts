@@ -94,7 +94,7 @@ def do_release(script_dir, config, ):
 		print ('version: %s' % version)
 	else:
 		notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
-		os.system("%s -mode batch -source %s%s -tclargs %s %s %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version))
+		os.system("%s -mode batch -source %s%s -tclargs -xpr %s -repo %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path))
 
 if __name__ == "__main__":
 	# Parse CONFIG.INI
