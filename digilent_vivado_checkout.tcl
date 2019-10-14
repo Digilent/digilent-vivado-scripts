@@ -1,8 +1,50 @@
+# Note: argument order does not matter when setting argv; all arguments are optional
+# Usage (No Defaults):
+#   set argv "-r <repo_path> -x <xpr_path> -v <vivado_version> -w <workspace>"
+#   source digilent_vivado_checkout.tcl
+# Usage (All Defaults):
+#   set argv ""
+#   source digilent_vivado_checkout.tcl
 # TODO: handle SDK projects.
+# TODO: add debug flag for argument checking
 
-set xpr_path [file normalize [lindex $argv 0]]
-set repo_path [file normalize [lindex $argv 1]]
-set vivado_version [lindex $argv 2]
+# Handle repo_path argument
+set idx [lsearch ${argv} "-r"]
+if {${idx} != -1} {
+	set repo_path [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
+} else {
+	# Default
+	set repo_path [file normalize [file dirname [info script]]/..]
+}
+
+# Handle xpr_path argument
+set idx [lsearch ${argv} "-x"]
+if {${idx} != -1} {
+	set xpr_path [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
+} else {
+	# Default
+	set xpr_path [file join ${repo_path} proj [file tail $repo_path]].xpr]
+}
+
+# Handle workspace argument
+set idx [lsearch ${argv} "-w"]
+if {${idx} != -1} {
+	set workspace [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
+} else {
+	# Default
+	set workspace [file join ${repo_path} sdk]
+}
+
+# Handle vivado_version argument
+set idx [lsearch ${argv} "-v"]
+if {${idx} != -1} {
+	set vivado_version [lindex ${argv} [expr {${idx}+1}]]
+} else {
+	# Default
+	set vivado_version [version -short]
+}
+
+# Other variables
 set vivado_year [lindex [split $vivado_version "."] 0]
 set proj_name [file rootname [file tail $xpr_path]]
 

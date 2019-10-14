@@ -1,3 +1,13 @@
+# Note: argument order does not matter when setting argv; all arguments are optional
+# Usage (No Defaults):
+#   set argv "-r <repo_path> -x <xpr_path> -v <vivado_version> -no_hdf -w <workspace>"
+#   source digilent_vivado_checkin.tcl
+# Usage (All Defaults):
+#   set argv ""
+#   source digilent_vivado_checkin.tcl
+# TODO: handle SDK projects.
+# TODO: add debug flag for argument checking
+
 foreach arg $argv {
 	puts $arg
 }
@@ -5,12 +15,64 @@ foreach arg $argv {
 # Collect local sources, move them to ../src/<category>
 # Collect sdk project & BSP & dummy hardware platform, and move them to ../sdk
 
-# TODO: handle SDK projects.
-# TODO: improve argument support - perhaps by parsing argv for "-argname arg" style values
-set xpr_path [file normalize [lindex $argv 0]]
-set proj_file [file tail $xpr_path]
-set repo_path [file normalize [lindex $argv 1]]
+# Handle repo_path argument
+set idx [lsearch ${argv} "-r"]
+if {${idx} != -1} {
+	set repo_path [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
+} else {
+	# Default
+	set repo_path [file normalize [file join [file dirname [info script]] ..]]
+}
+
+# Handle xpr_path argument
+set idx [lsearch ${argv} "-x"]
+if {${idx} != -1} {
+	set xpr_path [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
+} else {
+	# Default
+	set xpr_path [glob -nocomplain "${repo_path}/proj/*.xpr"]
+}
+if {[llength ${xpr_path}] != 1} {
+	puts "ERROR: XPR not found"
+} else {
+	set xpr_path [lindex ${xpr_path} 0]
+}
+
+# Handle vivado_version argument
+set idx [lsearch ${argv} "-v"]
+if {${idx} != -1} {
+	set vivado_version [lindex ${argv}]
+} else {
+	set vivado_version [version -short]
+}
+
+# Handle no_hdf argument
+set idx [lsearch ${argv} "-no_hdf"]
+if {${idx} != -1} {
+	set no_hdf 1
+} else {
+	set no_hdf 0
+}
+
+# Handle workspace argument
+set idx [lsearch ${argv} "-w"]
+if {${idx} != -1} {
+	set workspace_path [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
+} else {
+	# Default
+	set workspace_path [glob -nocomplain [file join ${repo_path} sdk]]
+}
+if {[llength ${workspace_path}] != 1} {
+	puts "ERROR: Workspace not found"
+} else {
+	set workspace_path [lindex ${workspace_path} 0]
+}
+
+
 set vivado_version [lindex $argv 2]; # unused
+
+# Other variables
+set proj_file [file tail $xpr_path]
 set force_overwrite_info_script 0; # included for possible argument support in future
 
 puts "INFO: Checking project \"$proj_file\" into version control."
