@@ -60,45 +60,28 @@ def do_checkout(args):
 		sys.exit()
 	
 	print('Checking out project %s from repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
-	
+	notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
+	cmd = "%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s -w %s" % (
+		vivado_cmd,
+		script_path,
+		notrace,
+		# arguments
+		xpr_path,
+		repo_path,
+		version,
+		workspace
+	)
 	if DEBUG_NO_VIVADO:
 		print ('vivado_cmd: %s' % vivado_cmd)
 		print ('script_path: %s' % script_path)
 		print ('xpr_path: %s' % xpr_path)
 		print ('repo_path: %s' % repo_path)
 		print ('version: %s' % version)
+		print(cmd)
 	else:
-		notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
-		os.system("%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s -w %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version, workspace))
+		os.system(cmd)
 
 from release import do_release
-
-#def do_release(args):
-#	DEBUG_NO_VIVADO = args['DEBUG_NO_VIVADO']
-#	DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
-#	
-#	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
-#	script_path = os.path.join(args['script_dir'], 'digilent_vivado_release.tcl').replace('\\', '/')
-#	xpr_path    = args['xpr_path'].replace('\\', '/')
-#	repo_path   = args['repo_path'].replace('\\', '/')
-#	zip_path    = args['zip_path'].replace('\\', '/')
-#	version     = args['version'].replace('\\', '/')
-#		
-#	if not args['force'] and not accept_warning('If %s exists, it will be overwritten. Do you wish to continue?' % zip_path):
-#		sys.exit()
-#	
-#	print('Creating release %s from project %s' % (os.path.basename(zip_path), os.path.basename(xpr_path)))
-#	
-#	if DEBUG_NO_VIVADO:
-#		print ('vivado_cmd: %s' % vivado_cmd)
-#		print ('script_path: %s' % script_path)
-#		print ('xpr_path: %s' % xpr_path)
-#		print ('zip_path: %s' % zip_path)
-#		print ('repo_path: %s' % repo_path)
-#		print ('version: %s' % version)
-#	else:
-#		notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
-#		os.system("%s -mode batch -source %s%s -tclargs -x %s -r %s -z %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, zip_path))
 
 if __name__ == "__main__":
 	# Parse CONFIG.INI

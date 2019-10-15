@@ -7,4 +7,4 @@
 !*.tcl
 !*.py
 !README.md
-!.gitignore
+!*.gitignore

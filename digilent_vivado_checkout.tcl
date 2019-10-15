@@ -20,7 +20,7 @@ if {${idx} != -1} {
 # Handle xpr_path argument
 set idx [lsearch ${argv} "-x"]
 if {${idx} != -1} {
-	set xpr_path [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
+	set xpr_path [file normalize [lindex ${argv} [expr {${idx}+1}]]]
 } else {
 	# Default
 	set xpr_path [file join ${repo_path} proj [file tail $repo_path]].xpr]
@@ -29,7 +29,7 @@ if {${idx} != -1} {
 # Handle workspace argument
 set idx [lsearch ${argv} "-w"]
 if {${idx} != -1} {
-	set workspace [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
+	set workspace [file normalize [lindex ${argv} [expr {${idx}+1}]]]
 } else {
 	# Default
 	set workspace [file join ${repo_path} sdk]
