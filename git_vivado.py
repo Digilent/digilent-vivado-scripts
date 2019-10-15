@@ -9,9 +9,6 @@ import configparser
 import argparse
 import platform
 
-DEBUG_NO_VIVADO = False
-DEBUG_VIVADO_TCL_TRACE = False
-
 def accept_warning(s):
 	c = ''
 	d = {'Y': True, 'y': True, 'N': False, 'n': False}
@@ -21,8 +18,8 @@ def accept_warning(s):
 
 	# def do_checkin(script_dir, args):
 def do_checkin(args):
-	global DEBUG_NO_VIVADO
-	global DEBUG_VIVADO_TCL_TRACE
+	DEBUG_NO_VIVADO = args['DEBUG_NO_VIVADO']
+	DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
 	
 	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
 	script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkin.tcl').replace('\\', '/')
@@ -48,8 +45,8 @@ def do_checkin(args):
 		os.system("%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s -w %s%s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version, workspace, no_hdf))
 	
 def do_checkout(args):
-	global DEBUG_NO_VIVADO
-	global DEBUG_VIVADO_TCL_TRACE
+	DEBUG_NO_VIVADO = args['DEBUG_NO_VIVADO']
+	DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
 	
 	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
 	script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkout.tcl').replace('\\', '/')
@@ -73,33 +70,35 @@ def do_checkout(args):
 	else:
 		notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
 		os.system("%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s -w %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version, workspace))
-	
-def do_release(args):
-	global DEBUG_NO_VIVADO
-	global DEBUG_VIVADO_TCL_TRACE
-	
-	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
-	script_path = os.path.join(args['script_dir'], 'digilent_vivado_release.tcl').replace('\\', '/')
-	xpr_path    = args['xpr_path'].replace('\\', '/')
-	repo_path   = args['repo_path'].replace('\\', '/')
-	zip_path    = args['zip_path'].replace('\\', '/')
-	version     = args['version'].replace('\\', '/')
-		
-	if not args['force'] and not accept_warning('If %s exists, it will be overwritten. Do you wish to continue?' % zip_path):
-		sys.exit()
-	
-	print('Creating release %s from project %s' % (os.path.basename(zip_path), os.path.basename(xpr_path)))
-	
-	if DEBUG_NO_VIVADO:
-		print ('vivado_cmd: %s' % vivado_cmd)
-		print ('script_path: %s' % script_path)
-		print ('xpr_path: %s' % xpr_path)
-		print ('zip_path: %s' % zip_path)
-		print ('repo_path: %s' % repo_path)
-		print ('version: %s' % version)
-	else:
-		notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
-		os.system("%s -mode batch -source %s%s -tclargs -x %s -r %s -z %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, zip_path))
+
+from release import do_release
+
+#def do_release(args):
+#	DEBUG_NO_VIVADO = args['DEBUG_NO_VIVADO']
+#	DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
+#	
+#	vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
+#	script_path = os.path.join(args['script_dir'], 'digilent_vivado_release.tcl').replace('\\', '/')
+#	xpr_path    = args['xpr_path'].replace('\\', '/')
+#	repo_path   = args['repo_path'].replace('\\', '/')
+#	zip_path    = args['zip_path'].replace('\\', '/')
+#	version     = args['version'].replace('\\', '/')
+#		
+#	if not args['force'] and not accept_warning('If %s exists, it will be overwritten. Do you wish to continue?' % zip_path):
+#		sys.exit()
+#	
+#	print('Creating release %s from project %s' % (os.path.basename(zip_path), os.path.basename(xpr_path)))
+#	
+#	if DEBUG_NO_VIVADO:
+#		print ('vivado_cmd: %s' % vivado_cmd)
+#		print ('script_path: %s' % script_path)
+#		print ('xpr_path: %s' % xpr_path)
+#		print ('zip_path: %s' % zip_path)
+#		print ('repo_path: %s' % repo_path)
+#		print ('version: %s' % version)
+#	else:
+#		notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
+#		os.system("%s -mode batch -source %s%s -tclargs -x %s -r %s -z %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, zip_path))
 
 if __name__ == "__main__":
 	# Parse CONFIG.INI
@@ -115,9 +114,14 @@ if __name__ == "__main__":
 	default_xpr_path = os.path.abspath(os.path.join(script_dir, '..', 'proj', '%s.xpr' % project_name))
 	default_workspace_path = os.path.abspath(os.path.join(script_dir, '..', 'sdk'))
 	default_version = config_settings['VivadoVersion']
-	releases_dir = os.path.abspath(os.path.join(script_dir, '..', 'release'))
-	default_zip_path = os.path.abspath(os.path.join(releases_dir, '%s-%s.zip' % (project_name, default_version)))
-	default_temp_directory = os.path.abspath(os.path.join(releases_dir, 'temp'))
+	
+	idx = 0
+	while os.path.exists( os.path.abspath(os.path.join(script_dir, '..', 'release_%d' % (idx))) ):
+		idx += 1
+	release_dir = os.path.abspath(os.path.join(script_dir, '..', 'release_%d' % (idx)))
+
+	default_zip_path = os.path.abspath(os.path.join(release_dir, '%s-%s.zip' % (project_name, default_version)))
+	default_temp_directory = os.path.abspath(os.path.join(release_dir, '%s-%s' % (project_name, default_version)))
 
 	# Parse SYS.ARGV
 	parser = argparse.ArgumentParser(description='Handles vivado project git repo operations')
@@ -248,10 +252,10 @@ if __name__ == "__main__":
 		help='Vivado version number 20##.#\nDefault = %s' % (default_version)
 	)
 	parser_release.add_argument(
-		'-w',
+		'-ws',
 		dest='workspace',
 		type=str,
-		default=default_version,
+		default=default_workspace_path,
 		help='Path to SDK workspace\nDefault = %s' % (default_workspace_path)
 	)
 	parser_release.add_argument(
@@ -317,7 +321,12 @@ if __name__ == "__main__":
 			print('Error: XSCT not installed at %s' % funcargs['xsct_cmd'])
 			sys.exit()
 
-#	for key in funcargs:
-#		print(key, ':', funcargs[key])
+	if hasattr(args, 'temp_directory'):
+		funcargs['temp_directory'] = args.temp_directory
+
+	DEBUG_NO_VIVADO = False
+	DEBUG_VIVADO_TCL_TRACE = False
+	funcargs['DEBUG_NO_VIVADO'] = DEBUG_NO_VIVADO
+	funcargs['DEBUG_VIVADO_TCL_TRACE'] = DEBUG_VIVADO_TCL_TRACE
 
 	args.func(funcargs)

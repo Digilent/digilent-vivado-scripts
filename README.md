@@ -19,6 +19,8 @@ This subcommand calls into digilent_vivado_checkout.tcl in order to create a Viv
 1. `-x <xpr>`: Path to the project .xpr file the repo is to be checked out into. Default: `<repo>/proj/<repo name>.xpr`
 1. `-w <workspace>`: Path to the directory to be used as the SDK workspace. Default: `<repo>/sdk`
 1. `-v <version>`: Vivado version number. Default contained in config.ini. (Python only)
+
+**Note**: *All paths passed as arguments must either be absolute or relative to the current working directory.*
 #### Example Usage
 ##### Python:
 > <code>python git_vivado.py checkin -r D:/Github/Zybo-Z7-10-HDMI</code>
@@ -38,6 +40,8 @@ This subcommand calls into digilent_vivado_checkin.tcl in order to collect sourc
 1. `-w <workspace>`: Path to the SDK workspace associated with the project. If non-default, the workspace is copied to `<repo>/sdk`. Default: `<repo>/sdk`
 1. `-no_hdf`: Flag used to prevent overwriting of the hardware handoff. If this flag is not present and the bitstream is up-to-date, the hardware handoff file is checked in to `<repo>/hw_handoff`
 1. `-v <version>`: Vivado version number. Default contained in config.ini. (Python only)
+
+**Note**: *All paths passed as arguments must either be absolute or relative to the current working directory.*
 #### Example Usage
 ##### Python:
 > <code>python git_vivado.py checkin -r D:/Github/Zybo-Z7-10-HDMI</code>
@@ -58,6 +62,8 @@ This subcommand collects all required files and produces a release ZIP archive. 
 1. `-z <archive>`: Path where the resulting ZIP file will be placed. Default: `<repo>/release/<repo name>-<version>-#.zip`
 1. `-temp <temp_dir>`: Path to a safe place to put temporary files. Default: `<repo>/release/temp`
 1. `-v <version>`: Vivado version number. Default contained in config.ini. (Python only)
+
+**Note**: *All paths passed as arguments must either be absolute or relative to the current working directory.*
 #### Example Usage
 ##### Python:
 > <code>python git_vivado.py release -r D:/Github/Zybo-Z7-10-HDMI</code>
