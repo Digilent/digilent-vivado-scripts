@@ -167,7 +167,7 @@ if __name__ == "__main__":
 		'-w',
 		dest='workspace',
 		type=str,
-		default=default_version,
+		default=default_workspace_path,
 		help='Path to SDK workspace\nDefault = %s' % (default_workspace_path)
 	)
 	parser_checkin.add_argument(
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 		'-w',
 		dest='workspace',
 		type=str,
-		default=default_version,
+		default=default_workspace_path,
 		help='Path to SDK workspace\nDefault = %s' % (default_workspace_path)
 	)
 
