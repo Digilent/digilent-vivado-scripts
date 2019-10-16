@@ -1,6 +1,5 @@
-
 # components of a release:
-    # zip_file = <repo name>-<major version>-<minor version>.zip
+    # zip_file (named <repo name>-<major version>-<minor version>.zip)
         # sdk_workspace
             # contains hw, bsps, and apps, in source-control style
         # vivado_proj

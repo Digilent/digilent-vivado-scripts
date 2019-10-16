@@ -11,37 +11,37 @@
 # Handle repo_path argument
 set idx [lsearch ${argv} "-r"]
 if {${idx} != -1} {
-	set repo_path [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
+    set repo_path [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
 } else {
-	# Default
-	set repo_path [file normalize [file dirname [info script]]/..]
+    # Default
+    set repo_path [file normalize [file dirname [info script]]/..]
 }
 
 # Handle xpr_path argument
 set idx [lsearch ${argv} "-x"]
 if {${idx} != -1} {
-	set xpr_path [file normalize [lindex ${argv} [expr {${idx}+1}]]]
+    set xpr_path [file normalize [lindex ${argv} [expr {${idx}+1}]]]
 } else {
-	# Default
-	set xpr_path [file join ${repo_path} proj [file tail $repo_path]].xpr]
+    # Default
+    set xpr_path [file join ${repo_path} proj [file tail $repo_path]].xpr]
 }
 
 # Handle workspace argument
 set idx [lsearch ${argv} "-w"]
 if {${idx} != -1} {
-	set workspace [file normalize [lindex ${argv} [expr {${idx}+1}]]]
+    set workspace [file normalize [lindex ${argv} [expr {${idx}+1}]]]
 } else {
-	# Default
-	set workspace [file join ${repo_path} sdk]
+    # Default
+    set workspace [file join ${repo_path} sdk]
 }
 
 # Handle vivado_version argument
 set idx [lsearch ${argv} "-v"]
 if {${idx} != -1} {
-	set vivado_version [lindex ${argv} [expr {${idx}+1}]]
+    set vivado_version [lindex ${argv} [expr {${idx}+1}]]
 } else {
-	# Default
-	set vivado_version [version -short]
+    # Default
+    set vivado_version [version -short]
 }
 
 # Other variables
@@ -69,13 +69,13 @@ set_property "ip_output_repo" "[file normalize "$repo_path/proj/cache"]" $obj
 
 # Create 'sources_1' fileset (if not found)
 if {[string equal [get_filesets -quiet sources_1] ""]} {
-	puts "INFO: Creating sources_1 fileset"
+    puts "INFO: Creating sources_1 fileset"
     create_fileset -srcset sources_1
 }
 
 # Create 'constrs_1' fileset (if not found)
 if {[string equal [get_filesets -quiet constrs_1] ""]} {
-	puts "INFO: Creating constrs_1 fileset"
+    puts "INFO: Creating constrs_1 fileset"
     create_fileset -constrset constrs_1
 }
 
@@ -110,58 +110,58 @@ add_files -quiet -norecurse -fileset constrs_1 $repo_path/src/constraints
 set ipi_tcl_files [glob -nocomplain "$repo_path/src/bd/*.tcl"]
 set ipi_bd_files [glob -nocomplain "$repo_path/src/bd/*/*.bd"]
 if {[llength $ipi_tcl_files] > 1} {
-	# TODO: quit and log the error
-	puts "ERROR: This script cannot handle projects containing more than one block design!"
+    # TODO: quit and log the error
+    puts "ERROR: This script cannot handle projects containing more than one block design!"
 } elseif {[llength $ipi_tcl_files] == 1} {
-	# Use TCL script to rebuild block design
-	puts "INFO: Rebuilding block design from script"
-	# Create local source directory for bd
-	if {[file exist "[file rootname $xpr_path].srcs"] == 0} {
-		file mkdir "[file rootname $xpr_path].srcs"
-	}
-	if {[file exist "[file rootname $xpr_path].srcs/sources_1"] == 0} {
-		file mkdir "[file rootname $xpr_path].srcs/sources_1"
-	}
-	if {[file exist "[file rootname $xpr_path].srcs/sources_1/bd"] == 0} {
-		file mkdir "[file rootname $xpr_path].srcs/sources_1/bd"
-	}
-	# Force Non-Remote BD Flow
-	set origin_dir [pwd]
-	cd "[file rootname $xpr_path].srcs/sources_1"
-	set run_remote_bd_flow 0
-	source [lindex $ipi_tcl_files 0]
-	cd $origin_dir
+    # Use TCL script to rebuild block design
+    puts "INFO: Rebuilding block design from script"
+    # Create local source directory for bd
+    if {[file exist "[file rootname $xpr_path].srcs"] == 0} {
+        file mkdir "[file rootname $xpr_path].srcs"
+    }
+    if {[file exist "[file rootname $xpr_path].srcs/sources_1"] == 0} {
+        file mkdir "[file rootname $xpr_path].srcs/sources_1"
+    }
+    if {[file exist "[file rootname $xpr_path].srcs/sources_1/bd"] == 0} {
+        file mkdir "[file rootname $xpr_path].srcs/sources_1/bd"
+    }
+    # Force Non-Remote BD Flow
+    set origin_dir [pwd]
+    cd "[file rootname $xpr_path].srcs/sources_1"
+    set run_remote_bd_flow 0
+    source [lindex $ipi_tcl_files 0]
+    cd $origin_dir
 } elseif {[llength $ipi_bd_files] > 1} {
-	# TODO: quit and log the error
-	puts "ERROR: This script cannot handle projects containing more than one block design!"
+    # TODO: quit and log the error
+    puts "ERROR: This script cannot handle projects containing more than one block design!"
 } elseif {[llength $ipi_bd_files] == 1} {
-	# Add block design from .bd file and sources
-	puts "INFO: Rebuilding block design from BD fileset"
-	add_files -norecurse -quiet -fileset sources_1 [glob -nocomplain $repo_path/src/bd/*/*.bd]
-	open_bd_design [glob -nocomplain $repo_path/src/bd/*/*.bd]
-	set design_name [get_bd_designs]
-	set file "$repo_path/src/bd/$design_name/$design_name.bd"
-	set file [file normalize $file]
-	set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
-	if { ![get_property "is_locked" $file_obj] } {
-		set_property "synth_checkpoint_mode" "Hierarchical" $file_obj
-	}
+    # Add block design from .bd file and sources
+    puts "INFO: Rebuilding block design from BD fileset"
+    add_files -norecurse -quiet -fileset sources_1 [glob -nocomplain $repo_path/src/bd/*/*.bd]
+    open_bd_design [glob -nocomplain $repo_path/src/bd/*/*.bd]
+    set design_name [get_bd_designs]
+    set file "$repo_path/src/bd/$design_name/$design_name.bd"
+    set file [file normalize $file]
+    set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
+    if { ![get_property "is_locked" $file_obj] } {
+        set_property "synth_checkpoint_mode" "Hierarchical" $file_obj
+    }
 }
 
 # Make sure IPs are upgraded to the most recent version
 foreach ip [get_ips -filter "IS_LOCKED==1"] {
-	upgrade_ip -vlnv [get_property UPGRADE_VERSIONS $ip] $ip
-	export_ip_user_files -of_objects $ip -no_script -sync -force -quiet
+    upgrade_ip -vlnv [get_property UPGRADE_VERSIONS $ip] $ip
+    export_ip_user_files -of_objects $ip -no_script -sync -force -quiet
 }
 
 # Generate the wrapper
 set bd_files [get_files -of_objects [get_filesets sources_1] -filter "NAME=~*.bd"]
 if {[llength $bd_files] > 1} {
-	puts "ERROR: This script cannot handle projects containing more than one block design!"
+    puts "ERROR: This script cannot handle projects containing more than one block design!"
 } elseif {[llength $bd_files] == 1} {
-	set bd_name [get_bd_designs]
-	set bd_file [get_files $bd_name.bd]
-	set wrapper_file [make_wrapper -files $bd_file -top -force]
+    set bd_name [get_bd_designs]
+    set bd_file [get_files $bd_name.bd]
+    set wrapper_file [make_wrapper -files $bd_file -top -force]
     import_files -quiet -force -norecurse $wrapper_file
 
     set obj [get_filesets sources_1]
@@ -170,7 +170,7 @@ if {[llength $bd_files] > 1} {
 
 # Create 'synth_1' run (if not found)
 if {[string equal [get_runs -quiet synth_1] ""]} {
-	puts "INFO: Creating synth_1 run"
+    puts "INFO: Creating synth_1 run"
     create_run -name synth_1 -part $part_name -flow {Vivado Synthesis $vivado_year} -strategy "Vivado Synthesis Defaults" -constrset constrs_1
 } else {
     set_property strategy "Vivado Synthesis Defaults" [get_runs synth_1]
@@ -189,7 +189,7 @@ current_run -synthesis [get_runs synth_1]
 
 # Create 'impl_1' run (if not found)
 if {[string equal [get_runs -quiet impl_1] ""]} {
-	puts "INFO: Creating impl_1 run"
+    puts "INFO: Creating impl_1 run"
     create_run -name impl_1 -part $part_name -flow {Vivado Implementation $vivado_year} -strategy "Vivado Implementation Defaults" -constrset constrs_1 -parent_run synth_1
 } else {
     set_property strategy "Vivado Implementation Defaults" [get_runs impl_1]
