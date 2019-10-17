@@ -6,5 +6,5 @@
 !config.ini
 !*.tcl
 !*.py
-!README.md
+!*README.md
 !*.gitignore
