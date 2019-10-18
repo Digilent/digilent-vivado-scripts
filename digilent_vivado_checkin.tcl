@@ -89,6 +89,7 @@ if {[llength $already_opened] == 0} {
 
 set required_dirs [list 				\
     $repo_path/proj						\
+    $repo_path/hw_handoff			    \
     $repo_path/src 						\
     $repo_path/src/bd 					\
     $repo_path/src/constraints 			\
@@ -102,6 +103,7 @@ set required_dirs [list 				\
 ]
 set required_files [list 				\
     $repo_path/proj/.keep				\
+    $repo_path/hw_handoff/.keep			\
     $repo_path/src/bd/.keep				\
     $repo_path/src/constraints/.keep	\
     $repo_path/src/ip/.keep				\
