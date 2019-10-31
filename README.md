@@ -101,7 +101,37 @@ In order to ensure that any changes to this repository do not break the projects
 
 ------------
 ## Workflows
-### 1. Creating a New Project
+
+### 1. Cloning a Repo that uses this Subodule
+First clone the repository from github, using the "--recursive" flag, in order to pick up this and any other submodules installed in the repo.
+    
+  * <code>git clone --recursive \<repo URL\></code>
+    
+If the repo was cloned non-recursively, the repo's submodules must be initialized from a console:
+
+  * <code>git submodule init</code>
+
+#### Vivado
+Once the repo exists locally, the Vivado project can be checked out from source. To do this, use the following command:
+    
+  * <code>python3 digilent-vivado-scripts/git_vivado.py checkout</code>
+
+Alternatively, the project can be checked out from within Vivado, by calling the following command in the TCL console:
+
+  * <code>set argv ""; source digilent-vivado-scripts/digilent-vivado-checkout.tcl</code>
+
+Both of these commands create a Vivado project within the repository's "proj" folder. In the case of the python command, the project then needs to be opened from within Vivado.
+#### SDK
+1. To initialize the repo's SDK workspace (if it has one), first open SDK directly, choosing the repo's "sdk" folder as the workspace.
+
+2. Use SDK's top menu bar to open the *File -> Import* dialog, select *General -> Existing Projects into Workspace*, and select all of the projects present in the repo's "sdk" folder.
+
+3. To ensure that any changes made to the Vivado project are brought into the SDK workspace, the hardware platform project must be linked to the hardware handoff file. Right click on the \*_hw_platform_\* project and select *Change Hardware Specification*. Accept any warnings, then navigate to and select the repo's "hw_handoff" folder.
+
+4. If errors occur at this stage, it may be necessary to *refresh* the projects in the workspace, *clean and rebuild* some of them, and/or *regenerate BSP sources*.
+
+
+### 2. Creating a New Project
 1. Create a folder on your computer to hold the project repository. Use the naming convention <code>\<board\>-\<variant\>-\<project name\></code> (for example: "Zybo-Z7-20-DMA"). This folder will be referred to as the "local repo"
 
 2. Create a repository on GitHub for your project with Digilent as the owner. Name it the same as the local repo folder. Do not have Github create a README, gitignore file, or license for you. This repository will be referred to as the "remote repo".
@@ -131,7 +161,7 @@ In order to ensure that any changes to this repository do not break the projects
 8. Create and upload a release ZIP to Github - see "Creating a Release Archive" below.
 
 ----
-### 2. Creating a Repo from a Local Project
+### 3. Creating a Repo from a Local Project
 If your new project was not created following the directory structure described in "Creating a Repo from a Local Project", above, this is the workflow to follow. This flow is a little more in depth. It assumes that a project (and SDK workspace) has already been created.
 
 1. Create a repository on GitHub for your project with Digilent as the owner. Name it the same as the local repo folder. Do not have Github create a README, gitignore file, or license for you. This repository will be referred to as the "remote repo". Clone this repository to your computer - the folder where the repository is placed will be referred to as the "local repo".
@@ -159,7 +189,7 @@ If your new project was not created following the directory structure described 
 
 
 ----
-### 3. Retargeting an Existing Repo to use these Scripts
+### 4. Retargeting an Existing Repo to use these Scripts
 1. Clone (or pull) the Vivado project to be retargeted. Use its existing version control system to generate an XPR. If relevant, make sure to call "git submodule init" followed by "git submodule update" from a command line interface (git bash is recommended for Windows) from within the repo directory.
 
 2. Open the project in Vivado and make any changes necessary (perhaps upgrading IP). When exporting to and launching SDK, make sure to use exported locations and workspaces that are not "Local to Project".
@@ -186,7 +216,7 @@ If your new project was not created following the directory structure described 
 10. Create and upload a release ZIP to Github - see "Creating a Release Archive" below.
 
 ----
-### 4. Making Changes to a Project that uses this Submodule
+### 5. Making Changes to a Project that uses this Submodule
 1. Clone the Vivado project to be changed. **Note**: *Pull the repo instead, if you already have a local instance of the project.*
     * <code>git clone --recursive \<remote repo URL\></code>
 
@@ -222,7 +252,7 @@ If your new project was not created following the directory structure described 
 9. Create and upload a release ZIP to GitHub - see "Creating a Release Archive" below.
 
 ----
-### 5. Creating a Release Archive
+### 6. Creating a Release Archive
 1. If a README has not been created for the repo, first create one.
 
 2. Open the repo's Vivado project, and make sure that the bitstream is up to date and that hardware has been exported to the hw_handoff folder (if applicable).
@@ -239,7 +269,7 @@ If your new project was not created following the directory structure described 
 6. Draft a new release on Github and upload the ZIP to it. Give the release a descriptive title including the name of the project and the tool version number it supports. Use the format "v\<vivado version number\>-\<minor version number\>" for the version tag. Add text specifying the name of the ZIP that the user must download to the release's description field.
 
 ----
-### 6. Using a Release Archive
+### 7. Using a Release Archive
 1. Download and extract the most recent release archive from the repository's releases page.
 2. Open the project in the version of Vivado specified by the README, by using the "Open Project" dialog and selecting the project's .xpr file.
 #### Vivado Only
@@ -266,7 +296,7 @@ An example of  passing non-default arguments (checking in a local "My_Project" t
 
 ----
 ## Known Issues
-* Each developer needs their own version of the configuration file, config.ini, for each project they are woking on. The configuration file should be moved to somewhere outside of the repo submodule to accomodate this, in a predictable location on Linux and Windows. The python script will need to be updated to accomodate this, a location and less generic name will need to be chosen for the configuration file.
+* Each developer may need their own version of the configuration file, config.ini, for each project they are woking on. The configuration file should be moved to somewhere outside of the repo submodule to accomodate this, in a predictable location on Linux and Windows. The python script will need to be updated to accomodate this, a location and less generic name will need to be chosen for the configuration file.
 * The "archive project" functionality of Vivado may include local SDK sources in the release archive. This should be avoided so that users have a clean workspace to Export and Launch SDK into. The current process requires that the project's SDK workspace is created external to the Vivado project.
 * There is some danger that modifications to Digilent's board files may break existing projects, it may be worth considering adding the vivado-boards repository as a submodule to project repositories.
 * Releases do not contain a hardware handoff, requiring that the user open Xilinx SDK directly, rather than through Vivado.
