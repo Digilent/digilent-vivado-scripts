@@ -23,7 +23,7 @@ This subcommand calls into digilent_vivado_checkout.tcl in order to create a Viv
 **Note**: *All paths passed as arguments must either be absolute or relative to the current working directory.*
 #### Example Usage
 ##### Python:
-> <code>python git_vivado.py checkin -r D:/Github/Zybo-Z7-10-HDMI</code>
+> <code>python git_vivado.py checkout -r D:/Github/Zybo-Z7-10-HDMI</code>
 
 ##### TCL:
 > <code>set argv "-r D:/Github/Zybo-Z7-10-HDMI"</code>
