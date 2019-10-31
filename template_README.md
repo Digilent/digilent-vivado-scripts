@@ -1,4 +1,4 @@
-Arty-Z7-20-hdmi-in demo
+\<DEMO\> Demo
 ====================
 
 Description
@@ -34,7 +34,7 @@ Demo Setup
 
 *Do not include step 6 if the demo doesn't use UART.*
 
-6. Open a serial terminal emulator (such as TeraTerm) and connect it to the Basys 3's serial port, using a baud rate of \<BAUD\>.
+6. Open a serial terminal emulator (such as TeraTerm) and connect it to the \<BOARD\>'s serial port, using a baud rate of \<BAUD\>.
 
 7. In the green bar at the top of the Vivado window, click **Open target**. Select **Auto connect** from the drop down menu.
 
@@ -72,7 +72,7 @@ Next Steps
 
 This demo can be used as a basis for other projects by modifying the hardware platform in the Vivado project's block design or by modifying the SDK application project.
 
-Check out the Arty Z7-20's [Resource Center](https://reference.digilentinc.com/reference/programmable-logic/arty-z7/start) to find more documentation, demos, and tutorials.
+Check out the \<BOARD\>'s [Resource Center](https://reference.digilentinc.com/reference/programmable-logic/\<BOARD\>/start) to find more documentation, demos, and tutorials.
 
 For technical support or questions, please post on the [Digilent Forum](forum.digilentinc.com).
 
