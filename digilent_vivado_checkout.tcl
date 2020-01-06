@@ -111,7 +111,7 @@ set ipi_tcl_files [glob -nocomplain "$repo_path/src/bd/*.tcl"]
 set ipi_bd_files [glob -nocomplain "$repo_path/src/bd/*/*.bd"]
 if {[llength $ipi_tcl_files] > 1} {
     # TODO: quit and log the error
-    puts "ERROR: This script cannot handle projects containing more than one block design!"
+    puts "ERROR: This script cannot handle projects containing more than one block design! More than one tcl script foudn in src/bd"
 } elseif {[llength $ipi_tcl_files] == 1} {
     # Use TCL script to rebuild block design
     puts "INFO: Rebuilding block design from script"
@@ -133,7 +133,7 @@ if {[llength $ipi_tcl_files] > 1} {
     cd $origin_dir
 } elseif {[llength $ipi_bd_files] > 1} {
     # TODO: quit and log the error
-    puts "ERROR: This script cannot handle projects containing more than one block design!"
+    puts "ERROR: This script cannot handle projects containing more than one block design! More than one bd file foudn in src/bd"
 } elseif {[llength $ipi_bd_files] == 1} {
     # Add block design from .bd file and sources
     puts "INFO: Rebuilding block design from BD fileset"
@@ -154,19 +154,14 @@ foreach ip [get_ips -filter "IS_LOCKED==1"] {
     export_ip_user_files -of_objects $ip -no_script -sync -force -quiet
 }
 
-# Generate the wrapper
-set bd_files [get_files -of_objects [get_filesets sources_1] -filter "NAME=~*.bd"]
-if {[llength $bd_files] > 1} {
-    puts "ERROR: This script cannot handle projects containing more than one block design!"
-} elseif {[llength $bd_files] == 1} {
-    set bd_name [get_bd_designs]
-    set bd_file [get_files $bd_name.bd]
-    set wrapper_file [make_wrapper -files $bd_file -top -force]
-    import_files -quiet -force -norecurse $wrapper_file
+# Generate the wrapper for the root design
+set bd_name [get_bd_designs -of_objects [get_bd_cells /]]
+set bd_file [get_files $bd_name.bd]
+set wrapper_file [make_wrapper -files $bd_file -top -force]
+import_files -quiet -force -norecurse $wrapper_file
 
-    set obj [get_filesets sources_1]
-    set_property "top" "${bd_name}_wrapper" $obj
-}
+set obj [get_filesets sources_1]
+set_property "top" "${bd_name}_wrapper" $obj
 
 # Create 'synth_1' run (if not found)
 if {[string equal [get_runs -quiet synth_1] ""]} {
