@@ -155,13 +155,16 @@ foreach ip [get_ips -filter "IS_LOCKED==1"] {
 }
 
 # Generate the wrapper for the root design
-set bd_name [get_bd_designs -of_objects [get_bd_cells /]]
-set bd_file [get_files $bd_name.bd]
-set wrapper_file [make_wrapper -files $bd_file -top -force]
-import_files -quiet -force -norecurse $wrapper_file
+catch {
+	# catch block prevents projects without a block design from erroring at this step
+	set bd_name [get_bd_designs -of_objects [get_bd_cells /]]
+	set bd_file [get_files $bd_name.bd]
+	set wrapper_file [make_wrapper -files $bd_file -top -force]
+	import_files -quiet -force -norecurse $wrapper_file
 
-set obj [get_filesets sources_1]
-set_property "top" "${bd_name}_wrapper" $obj
+	set obj [get_filesets sources_1]
+	set_property "top" "${bd_name}_wrapper" $obj
+}
 
 # Create 'synth_1' run (if not found)
 if {[string equal [get_runs -quiet synth_1] ""]} {
