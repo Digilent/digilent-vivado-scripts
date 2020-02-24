@@ -37,6 +37,7 @@ src/constraints/**
 !src/hdl
 src/hdl/**
 !src/hdl/*.v
+!src/hdl/*.sv
 !src/hdl/*.vhd
 !src/ip
 !src/ip/*
