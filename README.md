@@ -4,6 +4,76 @@
 This repository contains a set of scripts for creating, maintaining, and releasing git repositories containing minimally version-controlled Vivado and Xilinx SDK projects. These scripts have only been tested with Vivado 2018.2; they may or may not work with newer or older versions of Vivado. A Python 3.6.3 (or newer) installation is required to use these scripts. As of time of writing, no additional Python modules 
 
 ----------------
+## Quick Guide
+
+This guide covers only what is required to gain access to and build demo project sources. For more in-depth details on these steps, and for information on how to push changes to a demo repository or build a release, see the **Workflows** section of this document, below.
+
+### Prerequisites
+- For the purposes of the quick guide, you must have the URL for a demo repository that uses digilent-vivado-scripts as a submodule. 
+  
+  For the purposes of this guide, any time that the text `<demo>` appears, you should replace it with the name of your chosen demo, as it appears at the end of the URL. For example, for the [Zybo Z7-20 HDMI demo](https://github.com/Digilent/Zybo-Z7-20-HDMI), `<demo>` should be replaced with `Zybo-Z7-20-HDMI`.
+- Make sure that [Git](https://git-scm.com/) and a console application that can use it are installed on your computer. Most Linux systems will already have git installed. Windows users are recommended to use the Git Bash shell available through https://gitforwindows.org.
+- Make sure you have the version of Vivado and/or Xilinx SDK targeted by your chosen demo repository installed on your computer. The README for your chosen demo will describe which version of these tools it can be used with. Installation instructions can be found in the [Installing Vivado, Xilinx SDK, and Digilent Board Files](https://reference.digilentinc.com/vivado/installing-vivado/start) guide on the Digilent Wiki.
+### Getting Demo Sources
+- Open your git-compatible console or terminal application.
+- Change directory (using the `cd` command) to the folder that you wish to put the demo sources into. **Note:** *Take note of which directory you are in, it will be used again later*
+- Clone the chosen demo repository. Since the demo repository uses submodules, you should specify the --recursive flag when cloning:
+  
+  `git clone --recursive https://github.com/Digilent/<demo>`
+- *Only if* the chosen demo repository uses multiple branches to contain multiple demos - which is described in the repository's README - then use the steps below to get the correct sources for that branch.
+  - Change the working directory to the folder the repo was cloned into:
+    
+    `cd <demo>`
+  - If you don't know if your chosen demo repository contains multiple demo branches, or if you don't know the name of the demo branch you want to check out, the following command can be used to list all available branches:
+  
+    `git branch -a`
+  - Check out the branch for the demo you wish to access:
+
+    `git checkout \<demo branch\>`
+  - When checking out a branch, make sure to run the following commands. This will make sure that the correct versions are used for any sources that are included in the demo as submodules.
+    
+    `git submodule init`
+
+    `git submodule update`
+### Initializing and Building the Vivado Project
+- Launch the version of Vivado that your chosen demo targets.
+- Once Vivado is open, open the TCL Console at the bottom of the screen.
+- To initialize and open the Vivado project, run the following command in the TCL console, changing `<path>` to match the location of the directory that you noted down in Step 2 of the *Getting Demo Sources* section:
+
+  `set argv ""; source <path>/<demo>/digilent-vivado-scripts/digilent_vivado_checkout.tcl`
+- At this point you now have access to the Vivado Project and all of its sources. The project can be viewed, changes can be made, a bitstream can be generated, and hardware handoff file (HDF) can be generated. For Standalone Hardware demos, the Quick Guide ends here. The introduction of the next section will tell you how to determine whether your chosen demo is a Standalone Hardware demo or not.
+### Initializing and Building the SDK Workspace
+Not all demos contain a Xilinx SDK workspace. You can tell the difference by checking to see if an `sdk` folder is present in the cloned demo's folder. Some demos may have their SDK workspaces broken out into a seperate `*-SW` repo, included as a submodule of a "root" repository. If this folder or other repository does not exist, then this section can be skipped. 
+- Launch the version of Xilinx SDK that your chosen demo targets. It is important that you launch SDK directly, **not** through Vivado, to avoid creating an additional hardware platform before the one found in the demo repository can be added to the workspace.
+- When SDK launches, you will be prompted to select a directory as a workspace. Select the demo repository's `sdk` folder, then click **OK**. For example, the Zybo-Z7-20-HDMI repository would use the folder `<path>/<demo>/sdk` as its workspace, where `<path>` is the working directory that you noted down in Step 2 of the *Getting Demo Sources* section. Make sure to leave the *Use this as the default...* box unchecked.
+- When the SDK window fully opens, click the **Import Project** button. This will launch a dialog that will be used to bring in all projects from the demo repository.
+  * **Browse** to select the `<path>/<demo>/sdk` folder as the root directory.
+  * Make sure that all of the projects that are present (and not grayed out) are selected.
+  * All other options can be left as defaults.
+  * When satified that the correct projects will be brought into the workspace, click **Finish**.
+- When the projects are imported, the workspace will be built automatically. If errors are present, you may need to find the board support package project (named `*_bsp`) in the *Project Explorer*, right click on it, and select **Regenerate BSP Sources**. Upon doing so, the workspace will be rebuilt, and the errors should resolve themselves.
+- Check your demo repository's README for additional requirements. Some demos may require additional configuration, such as setting environment variables that depend on where the demo repository is located on your computer.
+- At this point you now have access to the Xilinx SDK Workspace and all of its sources. The sources can be viewed, changed, rebuilt, and the application project can be run on your board.
+### Importing a Modified Hardware Design to SDK
+After setting up the Vivado Project and SDK Workspace, a link should be created so that changes made to the hardware design can be automatically imported into the software workspace. **Note:** *These steps are intended for Baremetal Software projects. If the demo is a Petalinux Software or Standalone Hardware project, then this section should not be used. The steps required to handle bringing changes to hardware into a Petalinux Software project will be covered in other documentation associated with that project.*
+- In Vivado, with the demo's project open, click the **Generate Bitstream** button at the bottom of the *Flow Navigator* pane. This will fully build the project, through Synthesis and Implementation, and may take some time, typically 5 to 30+ minutes, depending on the complexity of the design and the specifications of your computer.
+- Once the bitstream has been generated, in the menu at the top of the screen, use the **File > Export > Export Hardware** option to export the generated Hardware Handoff (HDF) file:
+  * In the dialog, click the **...** button to select the `<path>/<demo>/hw_handoff` folder, `<path>` is the working directory that you noted down in Step 2 of the *Getting Demo Sources* section.
+  * Make sure that the *Include Bitstream* box is checked.
+  * Once satisied that the options are correct, click **OK** to export the hardware handoff file.
+  * If prompted, overwrite the existing file.
+- In Xilinx SDK, find the hardware platform project (named `*_hardware_platform_0`) in the *Project Explorer*, right click on it, and select **Change Hardware Platform Specification**. This will launch a dialog which you can use to point SDK to the exported HDF file:
+  * Browse to and select the HDF file in the `<path>/<demo>/hw_handoff` folder (the same folder as selected for export in Step 2 of this section).
+  * Once satisied that the correct file is specified, click **OK** to export the hardware handoff file.
+- In future, whenever exporting hardware from Vivado, use the same `<path>/<demo>/hw_handoff` folder. With the specification chosen, whenever you do so, Xilinx SDK will prompt you to choose whether to automatically import the new HDF or not.
+### Final Notes
+At this point, you have access to a working copy of the demo repository. The chosen demo's README or wiki page will contain instructions on how to use this demo once it is programmed onto your board.
+
+For technical support, please visit the [Digilent Forums](https://forum.digilentinc.com/forum/4-fpga).
+
+This concludes the *Quick Guide*. The remainder of this document discusses the implementation of the digilent-vivado-scripts repository and how to use the scripts in more technical detail.
+
+----------------
 ## Python Frontend
 A front-end script, git_vivado.py, is provided to parse command line arguments and call into Vivado at the command line.  This script has three subcommands: "checkout", "checkin", and "release". Each of these subcommands has its own help menu, which explains the arguments that can be passed to the script, as well as show what the default values of each of these arguments will be. All paths passed to the script are assumed to be relative to the current working directory.
 
