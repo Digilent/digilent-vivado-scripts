@@ -79,6 +79,12 @@ if {[string equal [get_filesets -quiet constrs_1] ""]} {
     create_fileset -constrset constrs_1
 }
 
+# Create 'sim_1' fileset (if not found)
+if {[string equal [get_filesets -quiet sim_1] ""]} {
+    puts "INFO: Creating sim_1 fileset"
+    create_fileset -simset sim_1
+}
+
 # Capture project-specific IP settings
 puts "INFO: capturing IP-related settings from $repo_path/project_info.tcl"
 set_project_properties_pre_add_repo $proj_name
@@ -95,6 +101,10 @@ update_ip_catalog -rebuild
 # Add hardware description language sources
 puts "INFO: Adding HDL sources"
 add_files -quiet -norecurse $repo_path/src/hdl
+# Add hardware description language sources for simulation
+puts "INFO: Adding HDL simulation sources"
+add_files -fileset sim_1 -quiet  -norecurse $repo_path/src/hdl_sim
+
 
 # Add IPs
 # TODO: handle IP core-container files

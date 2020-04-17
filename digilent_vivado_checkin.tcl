@@ -95,6 +95,7 @@ set required_dirs [list 				\
     $repo_path/src/constraints 			\
     $repo_path/src/ip 					\
     $repo_path/src/hdl 					\
+    $repo_path/src/hdl_sim 					\
     $repo_path/src/other 				\
     $repo_path/repo 					\
     $repo_path/repo/local 				\
@@ -108,6 +109,7 @@ set required_files [list 				\
     $repo_path/src/constraints/.keep	\
     $repo_path/src/ip/.keep				\
     $repo_path/src/hdl/.keep			\
+    $repo_path/src/hdl_sim/.keep		\
     $repo_path/src/other/.keep			\
     $repo_path/repo/local/.keep			\
     $repo_path/repo/cache/.keep			\
