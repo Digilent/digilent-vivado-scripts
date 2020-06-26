@@ -1,11 +1,10 @@
 # Note: argument order does not matter when setting argv; all arguments are optional
 # Usage (No Defaults):
-#   set argv "-r <repo_path> -x <xpr_path> -v <vivado_version> -no_hdf -w <workspace>"
+#   set argv "-r <repo_path> -x <xpr_path> -v <vivado_version>"
 #   source digilent_vivado_checkin.tcl
 # Usage (All Defaults):
 #   set argv ""
 #   source digilent_vivado_checkin.tcl
-# TODO: handle SDK projects.
 # TODO: add debug flag for argument checking
 
 foreach arg $argv {
@@ -13,7 +12,6 @@ foreach arg $argv {
 }
 
 # Collect local sources, move them to ../src/<category>
-# Collect sdk project & BSP & dummy hardware platform, and move them to ../sdk
 
 # Handle repo_path argument
 set idx [lsearch ${argv} "-r"]
@@ -46,29 +44,6 @@ if {${idx} != -1} {
     set vivado_version [version -short]
 }
 
-# Handle no_hdf argument
-set idx [lsearch ${argv} "-no_hdf"]
-if {${idx} != -1} {
-    set no_hdf 1
-} else {
-    set no_hdf 0
-}
-
-# Handle workspace argument
-set idx [lsearch ${argv} "-w"]
-if {${idx} != -1} {
-    set workspace_path [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
-} else {
-    # Default
-    set workspace_path [glob -nocomplain [file join ${repo_path} sdk]]
-}
-if {[llength ${workspace_path}] != 1} {
-    puts "ERROR: Workspace not found"
-} else {
-    set workspace_path [lindex ${workspace_path} 0]
-}
-
-
 set vivado_version [lindex $argv 2]; # unused
 
 # Other variables
@@ -99,7 +74,6 @@ set required_dirs [list 				\
     $repo_path/repo 					\
     $repo_path/repo/local 				\
     $repo_path/repo/cache 				\
-    $repo_path/sdk						\
 ]
 set required_files [list 				\
     $repo_path/proj/.keep				\
@@ -111,7 +85,6 @@ set required_files [list 				\
     $repo_path/src/other/.keep			\
     $repo_path/repo/local/.keep			\
     $repo_path/repo/cache/.keep			\
-    $repo_path/sdk/.keep				\
 ]
 set files [list]
 
@@ -245,30 +218,6 @@ if {[file exists $master_gitignore] == 0} {
     set target $master_gitignore
     set origin [file join $script_dir template_master.gitignore]
     file copy -force $origin $target
-}
-# if sdk/.gitignore does not exist, create it
-set sdk_gitignore [file join $repo_path sdk .gitignore]
-if {[file exists $sdk_gitignore] == 0} {
-    puts "WARNING: This repository does not contain an sdk gitignore. creating one now."
-    set target $sdk_gitignore
-    set origin [file join $script_dir template_sdk.gitignore]
-    file copy -force $origin $target
-}
-
-# Check if the project has an up-to-date bitstream
-if {[get_property NEEDS_REFRESH [get_runs impl_1]]} {
-    puts "WARNING: bitstream is not up-to-date; hardwre handoff cannot be checked in"
-} else {
-    # if .sysdef exists, export it to repo/hw_handoff
-    set sysdef [glob -nocomplain [file rootname $xpr_path].runs/impl_1/*.sysdef]
-    if {[llength $sysdef] == 1} {
-        set hdf [file rootname [file tail $sysdef]].hdf
-        set hdf [file join $repo_path hw_handoff hdf]
-        file copy -force $sysdef $hdf
-        puts "INFO: Checking in [file tail $hdf] to version control"
-    } else {
-        puts "WARNING: multiple or no sysdef files found, cannot export hardware handoff"
-    }
 }
 
 puts "INFO: Project $proj_file has been checked into version control"

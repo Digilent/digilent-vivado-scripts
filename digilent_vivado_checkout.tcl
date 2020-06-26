@@ -1,11 +1,10 @@
 # Note: argument order does not matter when setting argv; all arguments are optional
 # Usage (No Defaults):
-#   set argv "-r <repo_path> -x <xpr_path> -v <vivado_version> -w <workspace>"
+#   set argv "-r <repo_path> -x <xpr_path> -v <vivado_version>"
 #   source digilent_vivado_checkout.tcl
 # Usage (All Defaults):
 #   set argv ""
 #   source digilent_vivado_checkout.tcl
-# TODO: handle SDK projects.
 # TODO: add debug flag for argument checking
 
 # Handle repo_path argument
@@ -26,14 +25,6 @@ if {${idx} != -1} {
     set xpr_path [file join ${repo_path} proj [file tail $repo_path]].xpr]
 }
 
-# Handle workspace argument
-set idx [lsearch ${argv} "-w"]
-if {${idx} != -1} {
-    set workspace [file normalize [lindex ${argv} [expr {${idx}+1}]]]
-} else {
-    # Default
-    set workspace [file join ${repo_path} sdk]
-}
 
 # Handle vivado_version argument
 set idx [lsearch ${argv} "-v"]
