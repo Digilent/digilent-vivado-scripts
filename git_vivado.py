@@ -87,14 +87,6 @@ if __name__ == "__main__":
     default_xpr_path = os.path.abspath(os.path.join(script_dir, '..', 'proj', '%s.xpr' % project_name))
     default_version = config_settings['VivadoVersion']
     
-    idx = 0
-    while os.path.exists( os.path.abspath(os.path.join(script_dir, '..', 'release_%d' % (idx))) ):
-        idx += 1
-    release_dir = os.path.abspath(os.path.join(script_dir, '..', 'release_%d' % (idx)))
-
-    default_zip_path = os.path.abspath(os.path.join(release_dir, '%s-%s.zip' % (project_name, default_version)))
-    default_temp_directory = os.path.abspath(os.path.join(release_dir, '%s-%s' % (project_name, default_version)))
-
     # Parse SYS.ARGV
     parser = argparse.ArgumentParser(description='Handles vivado project git repo operations')
     parser.add_argument(
