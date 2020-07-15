@@ -49,7 +49,7 @@ set vivado_version [lindex $argv 2]; # unused
 # Other variables
 set force_overwrite_info_script 0; # included for possible argument support in future
 set proj_file [file tail $xpr_path]
-set proj_dir [file dirname $proj_file]
+set proj_dir [file dirname $xpr_path]
 set proj_name [file rootname [file tail $proj_file]]
 
 puts "INFO: Checking project \"$proj_file\" into version control."
