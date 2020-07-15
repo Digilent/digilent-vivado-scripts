@@ -73,7 +73,6 @@ set required_dirs [list 				\
     $repo_path/src/other 				\
     $repo_path/repo 					\
     $repo_path/repo/local 				\
-    $repo_path/repo/cache 				\
 ]
 set required_files [list 				\
     $repo_path/proj/.keep				\
@@ -84,7 +83,6 @@ set required_files [list 				\
     $repo_path/src/hdl/.keep			\
     $repo_path/src/other/.keep			\
     $repo_path/repo/local/.keep			\
-    $repo_path/repo/cache/.keep			\
 ]
 set files [list]
 

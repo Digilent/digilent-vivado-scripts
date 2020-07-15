@@ -91,7 +91,6 @@ if __name__ == "__main__":
     # Default arguments assume that this script is contained in a submodule within the target repository
     default_repo_path = os.path.abspath(os.path.join(script_dir, '..'))
     default_xpr_path = os.path.abspath(os.path.join(script_dir, '..', 'proj', '%s.xpr' % project_name))
-    default_workspace_path = os.path.abspath(os.path.join(script_dir, '..', 'sdk'))
     default_version = config_settings['VivadoVersion']
     
     idx = 0
@@ -143,13 +142,6 @@ if __name__ == "__main__":
         help='Vivado version number 20##.#\nDefault = %s' % (default_version)
     )
     parser_checkin.add_argument(
-        '-w',
-        dest='workspace',
-        type=str,
-        default=default_workspace_path,
-        help='Path to SDK workspace\nDefault = %s' % (default_workspace_path)
-    )
-    parser_checkin.add_argument(
         '-no_hdf',
         dest='no_hdf',
         default=False,
@@ -185,13 +177,6 @@ if __name__ == "__main__":
         type=str,
         default=default_version,  
         help='Vivado version number 20##.#\nDefault = %s' % (default_version)
-    )
-    parser_checkout.add_argument(
-        '-w',
-        dest='workspace',
-        type=str,
-        default=default_workspace_path,
-        help='Path to SDK workspace\nDefault = %s' % (default_workspace_path)
     )
 
     # Release Arguments
