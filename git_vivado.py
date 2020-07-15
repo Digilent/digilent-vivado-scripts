@@ -6,8 +6,6 @@ import configparser
 import argparse
 import platform
 
-from release import do_release
-
 def accept_warning(s):
     c = ''
     d = {'Y': True, 'y': True, 'N': False, 'n': False}
@@ -24,8 +22,6 @@ def do_checkin(args):
     xpr_path    = args['xpr_path'].replace('\\', '/')
     repo_path   = args['repo_path'].replace('\\', '/')
     version     = args['version'].replace('\\', '/')
-    workspace   = args['workspace'].replace('\\', '/')
-    no_hdf      = ' -no_hdf' if args['no_hdf'] else ''
     
     if not args['force'] and not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % repo_path):
         sys.exit()
@@ -40,7 +36,7 @@ def do_checkin(args):
         print ('version: %s' % version)
     else:
         notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
-        os.system("%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s -w %s%s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version, workspace, no_hdf))
+        os.system("%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version))
     
 def do_checkout(args):
     DEBUG_NO_VIVADO = args['DEBUG_NO_VIVADO']
@@ -51,7 +47,6 @@ def do_checkout(args):
     xpr_path    = args['xpr_path'].replace('\\', '/')
     repo_path   = args['repo_path'].replace('\\', '/')
     version     = args['version'].replace('\\', '/')
-    workspace   = args['workspace'].replace('\\', '/')
     
     
     if not args['force'] and not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % os.path.dirname(xpr_path)):
@@ -59,15 +54,14 @@ def do_checkout(args):
     
     print('Checking out project %s from repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
     notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
-    cmd = "%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s -w %s" % (
+    cmd = "%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s" % (
         vivado_cmd,
         script_path,
         notrace,
         # arguments
         xpr_path,
         repo_path,
-        version,
-        workspace
+        version
     )
     if DEBUG_NO_VIVADO:
         print ('vivado_cmd: %s' % vivado_cmd)
@@ -141,13 +135,6 @@ if __name__ == "__main__":
         default=default_version,
         help='Vivado version number 20##.#\nDefault = %s' % (default_version)
     )
-    parser_checkin.add_argument(
-        '-no_hdf',
-        dest='no_hdf',
-        default=False,
-        action='store_true',
-        help='Do not check in hardware handoff\n Default = not set (False)'
-    )
 
     # Checkout Arguments
     parser_checkout = subparsers.add_parser(
@@ -179,57 +166,6 @@ if __name__ == "__main__":
         help='Vivado version number 20##.#\nDefault = %s' % (default_version)
     )
 
-    # Release Arguments
-    parser_release = subparsers.add_parser(
-        'release',
-        help='Creates release ZIP from XPR',
-        formatter_class=argparse.RawTextHelpFormatter
-    )
-    parser_release.set_defaults(func=do_release)
-    # Optional Args
-    parser_release.add_argument(
-        '-z',
-        dest='zip_path', 
-        type=str,
-        default=default_zip_path, 
-        help='Path to new release archive ZIP file\nDefault = %s' % (default_zip_path)
-    )
-    parser_release.add_argument(
-        '-r',
-        dest='repo_path',
-        type=str,
-        default=default_repo_path,
-        help='Path to target repository from\nDefault = %s' % (default_repo_path)
-    )
-    parser_release.add_argument(
-        '-x',
-        dest='xpr_path', 
-        type=str,
-        default=default_xpr_path, 
-        help='Path to XPR file\nDefault = %s' % (default_xpr_path)
-    )
-    parser_release.add_argument(
-        '-v',
-        dest='version',  
-        type=str,
-        default=default_version,  
-        help='Vivado version number 20##.#\nDefault = %s' % (default_version)
-    )
-    parser_release.add_argument(
-        '-ws',
-        dest='workspace',
-        type=str,
-        default=default_workspace_path,
-        help='Path to SDK workspace\nDefault = %s' % (default_workspace_path)
-    )
-    parser_release.add_argument(
-        '-temp',
-        dest='temp_directory',
-        type=str,
-        default=default_temp_directory,
-        help='Temp directory to store release intermediates\nDefault = %s' % (default_temp_directory)
-    )
-
     # Parse Arguments
     args = parser.parse_args()
 
@@ -257,23 +193,6 @@ if __name__ == "__main__":
             print('Error: cannot check out repo when project exists; Please clean out the %s/proj directory' % (funcargs['repo_path']))
             sys.exit()
     
-    if hasattr(args, 'zip_path'):
-        #if not os.path.dirname(args.zip_path):
-            # TODO: add warning/confirmation to create directory structure
-            # TODO: recursively create missing directories in zip_path
-        if os.path.isfile(args.zip_path):
-            # TODO: consider adding automatic renaming of release archive
-            print("Error: Target ZIP archive already exists")
-            sys.exit()
-        funcargs['zip_path'] = os.path.abspath(os.path.join(os.getcwd(), args.zip_path))
-    
-    if hasattr(args, 'no_hdf'):
-        funcargs['no_hdf'] = args.no_hdf
-    
-    if hasattr(args, 'workspace'):
-        # TODO: check for workspace's existence
-        funcargs['workspace'] = args.workspace
-
     if hasattr(args, 'version'):
         funcargs['vivado_cmd'] = os.path.join(os.path.abspath(config_settings['VivadoInstallPath']), args.version, 'bin', 'vivado')
         funcargs['version'] = args.version
