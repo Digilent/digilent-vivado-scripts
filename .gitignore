@@ -8,3 +8,5 @@
 !*.py
 !*README.md
 !*.gitignore
+!templates
+!templates/*

@@ -7,6 +7,8 @@
 #   source digilent_vivado_checkin.tcl
 # TODO: add debug flag for argument checking
 
+set script_dir [file normalize [file dirname [info script]]]
+
 foreach arg $argv {
     puts $arg
 }
@@ -175,46 +177,43 @@ foreach constraint_file [get_files -of_objects [get_filesets constrs_1]] {
 # project_info.tcl will only be created if it doesn't exist - if it has been manually deleted by the user, or if this is the first time this repo is checked in
 if {[file exists $repo_path/project_info.tcl] == 0 || $force_overwrite_info_script != 0} {
     set proj_obj [get_projects [file rootname $proj_file]]
+	
     set board_part [current_board_part -quiet]
     set part [get_property part $proj_obj]
     set default_lib [get_property default_lib $proj_obj]
     set simulator_language [get_property simulator_language $proj_obj]
     set target_language [get_property target_language $proj_obj]
+	
     puts "INFO: Checking in project_info.tcl to version control."
+	
+	set var_map [list <part> $part                             \
+					  <default_lib> $default_lib               \
+					  <simulator_language> $simulator_language \
+					  <target_language> $target_language       \
+	]
+	
+	if {$board_part ne ""} {
+		lappend var_map "<board_part> $board_part"
+	}
+	
     set file_name $repo_path/project_info.tcl
-    set file_obj [open $file_name "w"]
-    puts $file_obj "# This is an automatically generated file used by digilent_vivado_checkout.tcl to set project options"
-    puts $file_obj "proc set_project_properties_post_create_project {proj_name} {"
-    puts $file_obj "    set project_obj \[get_projects \$proj_name\]"
-    puts $file_obj "	set_property \"part\" \"$part\" \$project_obj"
-    if {$board_part ne ""} {
-        puts $file_obj "	set_property \"board_part\" \"$board_part\" \$project_obj"
-    }
-    puts $file_obj "	set_property \"default_lib\" \"$default_lib\" \$project_obj"
-    puts $file_obj "	set_property \"simulator_language\" \"$simulator_language\" \$project_obj"
-    puts $file_obj "	set_property \"target_language\" \"$target_language\" \$project_obj"
-    puts $file_obj "}"
-    puts $file_obj ""
-    puts $file_obj "proc set_project_properties_pre_add_repo {proj_name} {"
-    puts $file_obj "    set project_obj \[get_projects \$proj_name\]"
-    puts $file_obj "    # default nothing"
-    puts $file_obj "}"
-    puts $file_obj ""
-    puts $file_obj "proc set_project_properties_post_create_runs {proj_name} {"
-    puts $file_obj "    set project_obj \[get_projects \$proj_name\]"
-    puts $file_obj "    # default nothing"
-    puts $file_obj "}"
-    
-    close $file_obj
+    set dfid [open $file_name "w"]
+	set sfid [open $script_dir/templates/project_info.tcl "r"]
+	
+	while { [gets $sfid line] >= 0 } {
+		puts $dfid [string map $var_map $line]
+	}
+	
+    close $dfid
+    close $sfid
 }
 
-set script_dir [file normalize [file dirname [info script]]]
 # if .gitignore does not exist, create it
 set master_gitignore [file join $repo_path .gitignore]
 if {[file exists $master_gitignore] == 0} {
     puts "WARNING: This repository does not contain a master gitignore. creating one now."
     set target $master_gitignore
-    set origin [file join $script_dir template_master.gitignore]
+    set origin $script_dir/templates/hw.gitignore
     file copy -force $origin $target
 }
 
