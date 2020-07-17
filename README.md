@@ -1,7 +1,7 @@
 # Digilent Vivado Scripts
 
 ## Introduction
-This repository contains a set of scripts for creating, maintaining, and releasing git repositories containing minimally version-controlled Vivado and Xilinx SDK projects. A Python 3.6.3 (or newer) installation is required to use the Python frontend for these scripts. As of time of writing, no additional Python modules are depended on.
+This repository contains a set of scripts for creating, maintaining, and releasing git repositories containing minimally version-controlled Vivado projects. A Python 3.6.3 (or newer) installation is required to use the Python frontend for these scripts. As of time of writing, no additional Python modules are depended on.
 
 ----------------
 ## Quick Guide
@@ -13,7 +13,7 @@ This guide covers only what is required to gain access to and build demo project
   
     For the purposes of this guide, any time that the text `<demo>` appears, you should replace it with the name of your chosen demo, as it appears at the end of the URL. For example, for the [Zybo Z7-20 HDMI demo](https://github.com/Digilent/Zybo-Z7-20-HDMI), `<demo>` should be replaced with `Zybo-Z7-20-HDMI`.
 - Make sure that [Git](https://git-scm.com/) and a console application that can use it are installed on your computer. Most Linux systems will already have git installed. Windows users are recommended to use the Git Bash shell available through https://gitforwindows.org.
-- Make sure you have the version of Vivado and/or Xilinx SDK targeted by your chosen demo repository installed on your computer. The README for your chosen demo will describe which version of these tools it can be used with. Installation instructions can be found in the [Installing Vivado, Xilinx SDK, and Digilent Board Files](https://reference.digilentinc.com/vivado/installing-vivado/start) guide on the Digilent Wiki.
+- Make sure you have the version of Vivado targeted by your chosen demo repository installed on your computer. The README for your chosen demo will describe which version of these tools it can be used with. Installation instructions can be found in the [Installing Vivado, Xilinx SDK, and Digilent Board Files](https://reference.digilentinc.com/vivado/installing-vivado/start) guide on the Digilent Wiki. FIXME update link
 ### Getting Demo Sources
 1. Open your git-compatible console or terminal application.
 1. Change directory (using the `cd` command) to the folder that you wish to put the demo sources into. **Note:** *Take note of which directory you are in, it will be used again later*
@@ -59,7 +59,7 @@ A front-end script, git_vivado.py, is provided to parse command line arguments a
 ## Commands / Scripts
 ### Checkout
 #### Description
-This subcommand calls into digilent_vivado_checkout.tcl in order to create a Vivado project, in the form of an XPR file, using the sources and scripts contained in the project repository. If a hardware handoff file and SDK projects are present in the repository, the SDK workspace is initialized in the specified workspace directory.
+This subcommand calls into digilent_vivado_checkout.tcl in order to create a Vivado project, in the form of an XPR file, using the sources and scripts contained in the project repository.
 #### Optional Arguments
 1. `-r <repo>`: Path to the repository directory. Default: `<digilent-vivado-scripts>/..`
 1. `-x <xpr>`: Path to the project .xpr file the repo is to be checked out into. Default: `<repo>/proj/<repo name>.xpr`
@@ -155,9 +155,9 @@ Both of these commands create a Vivado project within the repository's `proj` fo
     * `git submodule add https://github.com/Digilent/digilent-vivado-scripts`
     * `git remote add origin <remote repo URL>`
 
-4. While creating and developing your project using Vivado and Xilinx SDK, there are a few guidelines to follow:
+4. While creating and developing your project using Vivado, there are a few guidelines to follow:
     * When creating the project, make sure to place the Vivado project in a folder named `proj` in the local repo.
-    * When exporting hardware, make sure to export to the folder named `hw_handoff` in the local repo. **Note**: *The checkin command, used in (5), below will also handle exporting the hardware handoff.*
+    * When exporting hardware, make sure to export to the folder named `hw_handoff` in the local repo.
     * If IPs or interfaces from [vivado-library](https://github.com/Digilent/vivado-library) are required, create a folder called `repo` in the local repo, and add vivado-library as a submodule within that folder.
 
 5. Call the command below. This command can be called from anywhere in your filesystem, with relative paths changed as required. Missing required folders and files are automatically created, including gitignores. **Note:** *Invoking the script in this way uses all default arguments, which assume that the local repo directory structure is used. See* Creating a Repo from a Local Project, *below, for an alternate method.*
@@ -175,7 +175,7 @@ Both of these commands create a Vivado project within the repository's `proj` fo
 
 ----
 ### 3. Creating a Repo from a Local Project
-If your new project was not created following the directory structure described in *Creating a New Project*, above, this is the workflow to follow. This flow is a little more in depth. It assumes that a project (and SDK workspace) has already been created.
+If your new project was not created following the directory structure described in *Creating a New Project*, above, this is the workflow to follow. This flow is a little more in depth. It assumes that a project has already been created.
 
 1. Create a repository on GitHub for your project with Digilent as the owner. Name it the same as the local repo folder. Do not have Github create a README, gitignore file, or license for you. This repository will be referred to as the "remote repo". Clone this repository to your computer - the folder where the repository is placed will be referred to as the "local repo".
     * `cd <intended parent directory of the local repo>`
@@ -186,7 +186,7 @@ If your new project was not created following the directory structure described 
 
 3. Use the checkin command of git_vivado.py to check the local project into the local repo, adding required folders, required files, and the projects sources:
     * `cd digilent-vivado-scripts`
-    * `python3 git_vivado.py checkin -x <XPR file> -w <SDK workspace>`
+    * `python3 git_vivado.py checkin -x <XPR file>`
     * `cd ..`
 
 4. If any changes need to be made to the project during the checkout process, the project_info.tcl generated by the checkin command should be manually edited.
