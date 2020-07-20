@@ -64,27 +64,27 @@ if {[llength $already_opened] == 0} {
 
 
 
-set required_dirs [list 				\
-    $repo_path/proj						\
-    $repo_path/hw_handoff			    \
-    $repo_path/src 						\
-    $repo_path/src/bd 					\
-    $repo_path/src/constraints 			\
-    $repo_path/src/ip 					\
-    $repo_path/src/hdl 					\
-    $repo_path/src/other 				\
-    $repo_path/repo 					\
-    $repo_path/repo/local 				\
+set required_dirs [list                 \
+    $repo_path/proj                     \
+    $repo_path/hw_handoff               \
+    $repo_path/src                      \
+    $repo_path/src/bd                   \
+    $repo_path/src/constraints          \
+    $repo_path/src/ip                   \
+    $repo_path/src/hdl                  \
+    $repo_path/src/other                \
+    $repo_path/repo                     \
+    $repo_path/repo/local               \
 ]
-set required_files [list 				\
-    $repo_path/proj/.keep				\
-    $repo_path/hw_handoff/.keep			\
-    $repo_path/src/bd/.keep				\
-    $repo_path/src/constraints/.keep	\
-    $repo_path/src/ip/.keep				\
-    $repo_path/src/hdl/.keep			\
-    $repo_path/src/other/.keep			\
-    $repo_path/repo/local/.keep			\
+set required_files [list                \
+    $repo_path/proj/.keep               \
+    $repo_path/hw_handoff/.keep         \
+    $repo_path/src/bd/.keep             \
+    $repo_path/src/constraints/.keep    \
+    $repo_path/src/ip/.keep             \
+    $repo_path/src/hdl/.keep            \
+    $repo_path/src/other/.keep          \
+    $repo_path/repo/local/.keep         \
 ]
 set files [list]
 
@@ -177,33 +177,33 @@ foreach constraint_file [get_files -of_objects [get_filesets constrs_1]] {
 # project_info.tcl will only be created if it doesn't exist - if it has been manually deleted by the user, or if this is the first time this repo is checked in
 if {[file exists $repo_path/project_info.tcl] == 0 || $force_overwrite_info_script != 0} {
     set proj_obj [get_projects [file rootname $proj_file]]
-	
+    
     set board_part [current_board_part -quiet]
     set part [get_property part $proj_obj]
     set default_lib [get_property default_lib $proj_obj]
     set simulator_language [get_property simulator_language $proj_obj]
     set target_language [get_property target_language $proj_obj]
-	
+    
     puts "INFO: Checking in project_info.tcl to version control."
-	
-	set var_map [list <part> $part                             \
-					  <default_lib> $default_lib               \
-					  <simulator_language> $simulator_language \
-					  <target_language> $target_language       \
-	]
-	
-	if {$board_part ne ""} {
-		lappend var_map "<board_part> $board_part"
-	}
-	
+    
+    set var_map [list <part> $part                             \
+                      <default_lib> $default_lib               \
+                      <simulator_language> $simulator_language \
+                      <target_language> $target_language       \
+    ]
+    
+    if {$board_part ne ""} {
+        lappend var_map <board_part> $board_part
+    }
+    
     set file_name $repo_path/project_info.tcl
     set dfid [open $file_name "w"]
-	set sfid [open $script_dir/templates/project_info.tcl "r"]
-	
-	while { [gets $sfid line] >= 0 } {
-		puts $dfid [string map $var_map $line]
-	}
-	
+    set sfid [open $script_dir/templates/project_info.tcl "r"]
+    
+    while { [gets $sfid line] >= 0 } {
+        puts $dfid [string map $var_map $line]
+    }
+    
     close $dfid
     close $sfid
 }
