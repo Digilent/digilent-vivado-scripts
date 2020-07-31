@@ -112,7 +112,28 @@ if {[llength $bd_files] > 1} {
     set script_name "$repo_path/src/bd/${bd_name}.tcl"
     puts "INFO: Checking in ${script_name} to version control."
     write_bd_tcl -force -make_local $script_name
-    # TODO: Add support for "Add Module" IPI features (check in hdl files included in sources_1, but not any ip fileset)
+	
+	# Check in source files used in RTL module references (work in progress)
+	set root_design [get_property NAME [get_bd_cells /]]
+	set fileset [get_filesets sources_1]
+	# filter expression:
+	#     is_generated is true when a file is part of an IP.
+	#     file_type specification filters out unnecessary files
+	#     name filters out the block design wrapper file
+	set module_ref_sources [get_files -of_objects $fileset -filter "!IS_GENERATED && FILE_TYPE!={Block Designs} && FILE_TYPE!={Configuration Files} && NAME!~*/${root_design}_wrapper.*"]
+
+	foreach module_ref_source $module_ref_sources {
+		set origin [get_property name $module_ref_source]
+        
+		set subdir hdl
+		if {[lsearch ".v .vhd .sv" [file extension $origin]] != -1} {
+            puts "INFO: Checking in [file tail $origin] to version control."
+            set target $repo_path/src/$subdir/[file tail $origin]
+            if {[file exists $target] == 0} {
+                file copy -force $origin $target
+            }
+		}
+	}
 } else {
     foreach source_file [get_files -of_objects [get_filesets sources_1]] {
         set origin [get_property name $source_file]
