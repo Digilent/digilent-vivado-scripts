@@ -183,13 +183,30 @@ if {[file exists $repo_path/project_info.tcl] == 0 || $force_overwrite_info_scri
     set default_lib [get_property default_lib $proj_obj]
     set simulator_language [get_property simulator_language $proj_obj]
     set target_language [get_property target_language $proj_obj]
-    
+    set directives "#Custom directives for synthesis and implementation"
+
+	#Fetch non-default synthesis and implementation settings
+	foreach prop [list_property [get_runs synth_1] STEPS.*.ARGS.*] {
+		set Dval [list_property_value -default $prop [get_runs synth_1]]
+		set val [get_property $prop [get_runs synth_1]]
+		if {$Dval!=$val} {
+			append directives "\n\tset_property " $prop " " $val " [get_runs synth_1]"
+    }}
+
+	foreach prop [list_property [get_runs impl_1] STEPS.*.ARGS.*] {
+		set Dval [list_property_value -default $prop [get_runs impl_1]]
+		set val [get_property $prop [get_runs impl_1]]
+		if {$Dval!=$val} {
+			append directives "\n\tset_property " $prop " " $val " [get_runs impl_1]"
+    }}
+
     puts "INFO: Checking in project_info.tcl to version control."
     
     set var_map [list <part> $part                             \
                       <default_lib> $default_lib               \
                       <simulator_language> $simulator_language \
                       <target_language> $target_language       \
+                      <directives> $directives \
     ]
     
     if {$board_part ne ""} {

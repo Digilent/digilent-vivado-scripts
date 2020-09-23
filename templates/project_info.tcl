@@ -15,5 +15,5 @@ proc set_project_properties_pre_add_repo {proj_name} {
 
 proc set_project_properties_post_create_runs {proj_name} {
     set project_obj [get_projects $proj_name]
-    # default nothing
+	<directives>
 }
