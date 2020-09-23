@@ -168,9 +168,6 @@ if {[string equal [get_runs -quiet synth_1] ""]} {
 puts "INFO: Configuring synth_1 run"
 set obj [get_runs synth_1]
 set_property "part" $part_name $obj
-set_property "steps.synth_design.args.flatten_hierarchy" "none" $obj
-set_property "steps.synth_design.args.directive" "RuntimeOptimized" $obj
-set_property "steps.synth_design.args.fsm_extraction" "off" $obj
 
 # Set the current synth run
 puts "INFO: Setting current synthesis run"
@@ -187,9 +184,6 @@ if {[string equal [get_runs -quiet impl_1] ""]} {
 puts "INFO: Configuring impl_1 run"
 set obj [get_runs impl_1]
 set_property "part" $part_name $obj
-set_property "steps.opt_design.args.directive" "RuntimeOptimized" $obj
-set_property "steps.place_design.args.directive" "RuntimeOptimized" $obj
-set_property "steps.route_design.args.directive" "RuntimeOptimized" $obj
 
 # Set the current impl run
 puts "INFO: Setting current implementation run"
