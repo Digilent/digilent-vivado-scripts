@@ -102,7 +102,7 @@ foreach f $required_files {
 
 # Save source files, including block design tcl script
 # WARNING: This script does not capture any non-xdc files for block-design projects
-set bd_files [get_files -of_objects [get_filesets sources_1] -filter "NAME=~*.bd && NAME!~*/bd/*/ip/*"]
+set bd_files [get_files -filter "NAME=~*.bd && NAME!~*/bd/*/ip/*"]
 if {[llength $bd_files] > 1} {
     puts "ERROR: This script cannot handle projects containing more than one block design!"
 } elseif {[llength $bd_files] == 1} {
