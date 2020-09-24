@@ -208,10 +208,9 @@ if {[file exists $repo_path/project_info.tcl] == 0 || $force_overwrite_info_scri
                       <target_language> $target_language       \
                       <directives> $directives \
     ]
-    
-    if {$board_part ne ""} {
-        lappend var_map <board_part> $board_part
-    }
+
+	# Even if current_board_part is empty, the replacement must be made, otherwise placeholder will be considered a board name upon checkout
+    lappend var_map <board_part> $board_part
     
     set file_name $repo_path/project_info.tcl
     set dfid [open $file_name "w"]
