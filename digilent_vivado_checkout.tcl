@@ -120,7 +120,13 @@ if {[llength $ipi_tcl_files] > 1} {
     set origin_dir [pwd]
     cd "[file rootname $xpr_path].srcs/sources_1"
     set run_remote_bd_flow 0
-    source [lindex $ipi_tcl_files 0]
+    if {[set result [catch { source [lindex $ipi_tcl_files 0] } resulttext]]} {
+        # remember global error state
+        set einfo $::errorInfo
+        set ecode $::errorCode
+        catch {cd $origin_dir}
+        return -code $result -errorcode $ecode -errorinfo $einfo $resulttext
+    }
     cd $origin_dir
 } elseif {[llength $ipi_bd_files] > 1} {
     # TODO: quit and log the error
