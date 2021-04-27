@@ -191,10 +191,6 @@ if __name__ == "__main__":
         if not os.path.isfile(funcargs['vivado_cmd']):
             print('Error: Vivado not installed at %s' % funcargs['vivado_cmd'])
             sys.exit()
-        funcargs['xsct_cmd'] = os.path.join(os.path.abspath(config_settings['SdkInstallPath']), args.version, 'bin', config_settings['XsctFile'])
-        if not os.path.isfile(funcargs['xsct_cmd']):
-            print('Error: XSCT not installed at %s' % funcargs['xsct_cmd'])
-            sys.exit()
 
     if hasattr(args, 'temp_directory'):
         funcargs['temp_directory'] = args.temp_directory
