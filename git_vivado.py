@@ -123,8 +123,8 @@ def main():
                 print(f"Please clean out the {xpr_folder} directory")
                 sys.exit(1)
             else:
-            	print("Force flag set, overwriting old project files")
-            	reset_project_folder(f"{xpr_folder}")
+                print("Force flag set, overwriting old project files")
+                reset_project_folder(xpr_folder)
 
     if hasattr(args, 'version'):
         funcargs['vivado_cmd'] = os.path.join(os.path.abspath(config_settings['VivadoInstallPath']), args.version, 'bin', 'vivado')
