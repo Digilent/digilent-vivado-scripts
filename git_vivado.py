@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # PYTHON 3.X.X REQUIRED!!!
 
 import os
@@ -5,75 +6,10 @@ import sys
 import configparser
 import argparse
 import platform
+import shutil
 
-def accept_warning(s):
-    c = ''
-    d = {'Y': True, 'y': True, 'N': False, 'n': False}
-    while c not in d:
-        c = input('Warning: %s Y/N? ' % s)
-    return d[c]
 
-def do_checkin(args):
-    DEBUG_NO_VIVADO = args['DEBUG_NO_VIVADO']
-    DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
-    
-    vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
-    script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkin.tcl').replace('\\', '/')
-    xpr_path    = args['xpr_path'].replace('\\', '/')
-    repo_path   = args['repo_path'].replace('\\', '/')
-    version     = args['version'].replace('\\', '/')
-    
-    if not args['force'] and not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % repo_path):
-        sys.exit()
-        
-    print('Checking in project %s to repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
-    
-    if DEBUG_NO_VIVADO:
-        print ('vivado_cmd: %s' % vivado_cmd)
-        print ('script_path: %s' % script_path)
-        print ('xpr_path: %s' % xpr_path)
-        print ('repo_path: %s' % repo_path)
-        print ('version: %s' % version)
-    else:
-        notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
-        os.system("%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version))
-    
-def do_checkout(args):
-    DEBUG_NO_VIVADO = args['DEBUG_NO_VIVADO']
-    DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
-    
-    vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
-    script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkout.tcl').replace('\\', '/')
-    xpr_path    = args['xpr_path'].replace('\\', '/')
-    repo_path   = args['repo_path'].replace('\\', '/')
-    version     = args['version'].replace('\\', '/')
-    
-    
-    if not args['force'] and not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % os.path.dirname(xpr_path)):
-        sys.exit()
-    
-    print('Checking out project %s from repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
-    notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
-    cmd = "%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s" % (
-        vivado_cmd,
-        script_path,
-        notrace,
-        # arguments
-        xpr_path,
-        repo_path,
-        version
-    )
-    if DEBUG_NO_VIVADO:
-        print ('vivado_cmd: %s' % vivado_cmd)
-        print ('script_path: %s' % script_path)
-        print ('xpr_path: %s' % xpr_path)
-        print ('repo_path: %s' % repo_path)
-        print ('version: %s' % version)
-        print(cmd)
-    else:
-        os.system(cmd)
-
-if __name__ == "__main__":
+def main():
     # Parse CONFIG.INI
     script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     project_name = os.path.basename(os.path.abspath(os.path.join(script_dir, '..')))
@@ -179,12 +115,17 @@ if __name__ == "__main__":
             sys.exit()
         funcargs['xpr_path'] = os.path.abspath(os.path.join(os.getcwd(), args.xpr_path))
         if args.func == do_checkout and os.path.isfile(funcargs['xpr_path']) or os.path.isdir(funcargs['xpr_path']):
-            # TODO: add warning about overwriting existing project
+            xpr_folder = os.path.dirname(args.xpr_path)
             # TODO: add clean and overwrite process
             # TODO: move project_info.tcl to repo root
-            print('Error: cannot check out repo when project exists; Please clean out the %s/proj directory' % (funcargs['repo_path']))
-            sys.exit()
-    
+            print('Error: cannot check out repo when project exists.')
+            if not args.force:
+                print(f"Please clean out the {xpr_folder} directory")
+                sys.exit(1)
+            else:
+            	print("Force flag set, overwriting old project files")
+            	reset_project_folder(f"{xpr_folder}")
+
     if hasattr(args, 'version'):
         funcargs['vivado_cmd'] = os.path.join(os.path.abspath(config_settings['VivadoInstallPath']), args.version, 'bin', 'vivado')
         funcargs['version'] = args.version
@@ -201,3 +142,84 @@ if __name__ == "__main__":
     funcargs['DEBUG_VIVADO_TCL_TRACE'] = DEBUG_VIVADO_TCL_TRACE
 
     args.func(funcargs)
+
+
+def reset_project_folder(proj_path: str):
+	shutil.rmtree(proj_path)
+	os.mkdir(proj_path)
+	with open(f"{proj_path}/.keep", "w") as file:
+		pass
+
+
+def accept_warning(s):
+    c = ''
+    d = {'Y': True, 'y': True, 'N': False, 'n': False}
+    while c not in d:
+        c = input('Warning: %s Y/N? ' % s)
+    return d[c]
+
+
+def do_checkin(args):
+    DEBUG_NO_VIVADO = args['DEBUG_NO_VIVADO']
+    DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
+    
+    vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
+    script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkin.tcl').replace('\\', '/')
+    xpr_path    = args['xpr_path'].replace('\\', '/')
+    repo_path   = args['repo_path'].replace('\\', '/')
+    version     = args['version'].replace('\\', '/')
+    
+    if not args['force'] and not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % repo_path):
+        sys.exit()
+        
+    print('Checking in project %s to repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
+    
+    if DEBUG_NO_VIVADO:
+        print ('vivado_cmd: %s' % vivado_cmd)
+        print ('script_path: %s' % script_path)
+        print ('xpr_path: %s' % xpr_path)
+        print ('repo_path: %s' % repo_path)
+        print ('version: %s' % version)
+    else:
+        notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
+        os.system("%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version))
+
+
+def do_checkout(args):
+    DEBUG_NO_VIVADO = args['DEBUG_NO_VIVADO']
+    DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
+    
+    vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
+    script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkout.tcl').replace('\\', '/')
+    xpr_path    = args['xpr_path'].replace('\\', '/')
+    repo_path   = args['repo_path'].replace('\\', '/')
+    version     = args['version'].replace('\\', '/')
+    
+    
+    if not args['force'] and not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % os.path.dirname(xpr_path)):
+        sys.exit()
+    
+    print('Checking out project %s from repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
+    notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
+    cmd = "%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s" % (
+        vivado_cmd,
+        script_path,
+        notrace,
+        # arguments
+        xpr_path,
+        repo_path,
+        version
+    )
+    if DEBUG_NO_VIVADO:
+        print ('vivado_cmd: %s' % vivado_cmd)
+        print ('script_path: %s' % script_path)
+        print ('xpr_path: %s' % xpr_path)
+        print ('repo_path: %s' % repo_path)
+        print ('version: %s' % version)
+        print(cmd)
+    else:
+        os.system(cmd)
+
+
+if __name__ == "__main__":
+	main()
