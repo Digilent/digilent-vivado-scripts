@@ -1,6 +1,6 @@
 # Note: argument order does not matter when setting argv; all arguments are optional
 # Usage (No Defaults):
-#   set argv "-r <repo_path> -x <xpr_path> -v <vivado_version>"
+#   set argv "-r <repo_path> -x <xpr_path> -v <vivado_version> -b -no-block"
 #   source digilent_vivado_checkout.tcl
 # Usage (All Defaults):
 #   set argv ""
@@ -25,7 +25,6 @@ if {${idx} != -1} {
     set xpr_path [file join ${repo_path} proj [file tail $repo_path]].xpr]
 }
 
-
 # Handle vivado_version argument
 set idx [lsearch ${argv} "-v"]
 if {${idx} != -1} {
@@ -33,6 +32,24 @@ if {${idx} != -1} {
 } else {
     # Default
     set vivado_version [version -short]
+}
+
+# Handle build flag
+set idx [lsearch ${argv} "-b"]
+if {${idx} != -1} {
+    set build_when_checked_out 1
+} else {
+    # Default
+    set build_when_checked_out 0
+}
+
+# Handle no block flag
+set idx [lsearch ${argv} "-no-block"]
+if {${idx} != -1} {
+    set wait_on_build 0
+} else {
+    # Default
+    set wait_on_build 1
 }
 
 # Other variables
@@ -199,5 +216,33 @@ current_run -implementation [get_runs impl_1]
 puts "INFO: capturing run settings from $repo_path/project_info.tcl"
 set_project_properties_post_create_runs $proj_name
 
+# Get the post_build script path
+set post_build_script_path [file join ${repo_path} post_build.tcl]
+set post_build_script [glob -nocomplain ${post_build_script_path}]
+
+# Launch a build if -b was specified
+if {${build_when_checked_out}} {
+    launch_runs -to_step write_bitstream impl_1
+    # Wait until the project has been built if -no-block wasn't specified
+    if {${wait_on_build}} {
+        wait_on_run impl_1
+        puts "INFO: Build complete"
+
+        # If it exists, run the post_build script. This can be used to export 
+        if {${post_build_script} ne ""} {
+            source ${post_build_script}
+        } else {
+            puts "INFO: No post_build script found"
+        }
+    } else {
+        if {${post_build_script} ne ""} {
+            puts "WARNING: Build launched but ${post_build_script} has not been run"
+            puts "         After the bitstream has been generated, run the command 'source ${post_build_script}'"
+        } else {
+            puts "INFO: No post_build script found"
+        }
+    }
+}
+
 puts "INFO: Project created: [file tail $proj_name]"
-puts "INFO: Exiting Vivado"
+puts "INFO: Exiting digilent_vivado_checkout"

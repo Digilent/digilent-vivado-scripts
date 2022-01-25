@@ -224,6 +224,15 @@ if {[file exists $repo_path/project_info.tcl] == 0 || $force_overwrite_info_scri
     close $sfid
 }
 
+# if post_build script does not exist, create it
+set post_build_script [file join ${repo_path} post_build.tcl]
+if {[file exists ${post_build_script}] == 0} {
+    puts "WARNING: This repository does not contain a post_build script. creating one now."
+    set target ${post_build_script}
+    set origin [file join ${script_dir} templates post_build.tcl]
+    file copy -force ${origin} ${target}
+}
+
 # if .gitignore does not exist, create it
 set master_gitignore [file join $repo_path .gitignore]
 if {[file exists $master_gitignore] == 0} {

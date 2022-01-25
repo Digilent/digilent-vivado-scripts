@@ -47,21 +47,22 @@ def do_checkout(args):
     xpr_path    = args['xpr_path'].replace('\\', '/')
     repo_path   = args['repo_path'].replace('\\', '/')
     version     = args['version'].replace('\\', '/')
-    
-    
+    build       = args['build']
+
     if not args['force'] and not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % os.path.dirname(xpr_path)):
         sys.exit()
     
     print('Checking out project %s from repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
     notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
-    cmd = "%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s" % (
+    cmd = "%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s%s" % (
         vivado_cmd,
         script_path,
         notrace,
         # arguments
         xpr_path,
         repo_path,
-        version
+        version,
+        ' -b' if build else ''
     )
     if DEBUG_NO_VIVADO:
         print ('vivado_cmd: %s' % vivado_cmd)
@@ -69,6 +70,7 @@ def do_checkout(args):
         print ('xpr_path: %s' % xpr_path)
         print ('repo_path: %s' % repo_path)
         print ('version: %s' % version)
+        print ('build: %s' % build)
         print(cmd)
     else:
         os.system(cmd)
@@ -157,6 +159,13 @@ if __name__ == "__main__":
         default=default_version,  
         help='Vivado version number 20##.#\nDefault = %s' % (default_version)
     )
+    parser_checkout.add_argument(
+        '-b',
+        dest='build',
+        default=False,
+        action='store_true',
+        help='Build the project after checkout\nDefault = false'
+    )
 
     # Parse Arguments
     args = parser.parse_args()
@@ -169,6 +178,9 @@ if __name__ == "__main__":
     
     if hasattr(args, 'force'):
         funcargs['force'] = args.force
+    
+    if hasattr(args, 'build'):
+        funcargs['build'] = args.build
     
     if hasattr(args, 'repo_path'):
         funcargs['repo_path'] = os.path.abspath(os.path.join(os.getcwd(), args.repo_path))
