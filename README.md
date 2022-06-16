@@ -40,7 +40,7 @@ This guide covers only what is required to gain access to and build demo project
 1. Once Vivado is open, open the TCL Console at the bottom of the screen.
 1. To initialize and open the Vivado project, run the following command in the TCL console, changing `<path>` to match the location of the directory that you noted down in Step 2 of the *Getting Demo Sources* section:
 
-    `set argv ""; source <path>/<demo>/scripts/digilent_vivado_checkout.tcl`
+    `set argv ""; source <path>/<demo>/scripts/checkout.tcl`
 1. At this point you now have access to the Vivado Project and all of its sources. The project can be viewed, changes can be made, a bitstream can be generated, and Xilinx shell architecture file (XSA) can be generated for handoff to Vitis.
 ### Final Notes
 At this point, you have access to a working copy of the demo repository. The chosen demo's README or wiki page will contain instructions on how to use this demo once it is programmed onto your board.
@@ -59,7 +59,7 @@ A front-end script, git_vivado.py, is provided to parse command line arguments a
 ## Commands / Scripts
 ### Checkout
 #### Description
-This subcommand calls into digilent_vivado_checkout.tcl in order to create a Vivado project, in the form of an XPR file, using the sources and scripts contained in the project repository.
+This subcommand calls into checkout.tcl in order to create a Vivado project, in the form of an XPR file, using the sources and scripts contained in the project repository.
 #### Optional Arguments
 1. `-r <repo>`: Path to the repository directory. Default: `<digilent-vivado-scripts>/..`
 1. `-x <xpr>`: Path to the project .xpr file the repo is to be checked out into. Default: `<repo>/proj/<repo name>.xpr`
@@ -74,12 +74,12 @@ This subcommand calls into digilent_vivado_checkout.tcl in order to create a Viv
 ##### TCL:
 > `set argv "-r D:/Github/Zybo-Z7/hw"`
 
-> `source digilent_vivado_checkout.tcl`
+> `source checkout.tcl`
 
 -----------
 ### Checkin
 #### Description
-This subcommand calls into digilent_vivado_checkin.tcl in order to collect sources and generate needed scripts from a Vivado project into the repository structure described below. Files required for checkout *that are not already present* in the repository (such as project_info.tcl and gitignores), are automatically created. These files are not overwritten if they already exist.
+This subcommand calls into checkin.tcl in order to collect sources and generate needed scripts from a Vivado project into the repository structure described below. Files required for checkout *that are not already present* in the repository (such as project_info.tcl and gitignores), are automatically created. These files are not overwritten if they already exist.
 #### Optional Arguments
 1. `-r <repo>`: Path to the repository directory. Default: `<digilent-vivado-scripts>/..`
 1. `-x <xpr>`: Path to the project .xpr file to be processed for checkin. Default: `<repo>/proj/*.xpr`
@@ -93,7 +93,7 @@ This subcommand calls into digilent_vivado_checkin.tcl in order to collect sourc
 ##### TCL:
 > `set argv "-r D:/Github/Zybo-Z7/hw"`
 
-> `source digilent_vivado_checkin.tcl`
+> `source checkin.tcl`
 
 ------------------------------------
 ## Other Files and Overall Structure
@@ -143,7 +143,7 @@ Once the repo exists locally, the Vivado project can be checked out from source.
 
 Alternatively, the project can be checked out from within Vivado, by calling the following command in the TCL console:
 
-  * `set argv ""; source ./digilent-vivado-scripts/digilent_vivado_checkout.tcl`
+  * `set argv ""; source ./digilent-vivado-scripts/checkout.tcl`
 
 Both of these commands create a Vivado project within the repository's `proj` folder. In the case of the Python command, the project then needs to be opened from within Vivado.
 

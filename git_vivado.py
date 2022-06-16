@@ -18,7 +18,7 @@ def do_checkin(args):
     DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
     
     vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
-    script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkin.tcl').replace('\\', '/')
+    script_path = os.path.join(args['script_dir'], 'checkin.tcl').replace('\\', '/')
     xpr_path    = args['xpr_path'].replace('\\', '/')
     repo_path   = args['repo_path'].replace('\\', '/')
     version     = args['version'].replace('\\', '/')
@@ -43,7 +43,7 @@ def do_checkout(args):
     DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
     
     vivado_cmd  = args['vivado_cmd'].replace('\\', '/')
-    script_path = os.path.join(args['script_dir'], 'digilent_vivado_checkout.tcl').replace('\\', '/')
+    script_path = os.path.join(args['script_dir'], 'checkout.tcl').replace('\\', '/')
     xpr_path    = args['xpr_path'].replace('\\', '/')
     repo_path   = args['repo_path'].replace('\\', '/')
     version     = args['version'].replace('\\', '/')
