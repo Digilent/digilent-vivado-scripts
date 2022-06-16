@@ -111,7 +111,7 @@ if {[llength $bd_files] > 1} {
     set bd_name [file tail [file rootname [get_property NAME $bd_file]]]
     set script_name "$repo_path/src/bd/${bd_name}.tcl"
     puts "INFO: Checking in ${script_name} to version control."
-    write_bd_tcl -force -make_local $script_name
+    write_bd_tcl -force -no_ip_version -make_local $script_name
     # TODO: Add support for "Add Module" IPI features (check in hdl files included in sources_1, but not any ip fileset)
 } else {
     foreach source_file [get_files -of_objects [get_filesets sources_1]] {
