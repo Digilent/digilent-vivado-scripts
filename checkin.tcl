@@ -148,12 +148,12 @@ if {[llength $bd_files] > 1} {
     }
 	
 #Convert each core container back to its original format
-	foreach ip_ [get_ips] { 
-	set ip_core_cont [get_property IP_CORE_CONTAINER $ip_]
+	foreach ip [get_ips] { 
+	set ip_core_cont [get_property IP_CORE_CONTAINER $ip]
 	if {[llength ${ip_core_cont}] != 0} {
-		puts "INFO: Found $ip_core_cont for $ip_"
-		puts "Convert $ip_ currently in the core container format into the expanded form of the non-core container format"
-		convert_ips -force -from_core_container [get_files  [get_property ip_file $ip_]]
+		puts "INFO: Found $ip_core_cont for $ip"
+		puts "Convert $ip currently in the core container format into the expanded form of the non-core container format"
+		convert_ips -force -from_core_container [get_files  [get_property ip_file $ip]]
 	}
 }
     foreach ip [get_ips] {
