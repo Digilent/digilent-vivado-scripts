@@ -102,7 +102,9 @@ update_ip_catalog -rebuild
 
 # Add hardware description language sources
 puts "INFO: Adding HDL sources"
-add_files -quiet -norecurse $repo_path/src/hdl
+add_files -quiet -norecurse [glob -nocomplain $repo_path/src/hdl/*.v]
+add_files -quiet -norecurse [glob -nocomplain $repo_path/src/hdl/*.vhd]
+add_files -quiet -norecurse [glob -nocomplain $repo_path/src/hdl/*.sv]
 
 # Add IPs
 # TODO: handle IP core-container files
@@ -111,7 +113,7 @@ add_files -quiet [glob -nocomplain $repo_path/src/ip/*/*.xci]
 
 # Add constraints
 puts "INFO: Adding constraints"
-add_files -quiet -norecurse -fileset constrs_1 $repo_path/src/constraints
+add_files -quiet -norecurse -fileset constrs_1 [glob -nocomplain $repo_path/src/constraints/*.xdc]
 
 # Recreate block design
 # TODO: handle multiple block designs
