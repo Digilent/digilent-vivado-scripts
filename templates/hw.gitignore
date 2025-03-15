@@ -45,6 +45,8 @@ src/ip/*/**
 !src/ip/**/*.xci
 !src/other
 !src/other/**
+!src/sim
+!src/sim/**
 
 # hardware handoff
 hw_handoff/*
