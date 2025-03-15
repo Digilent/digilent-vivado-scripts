@@ -218,6 +218,35 @@ current_run -implementation [get_runs impl_1]
 puts "INFO: capturing run settings from $repo_path/project_info.tcl"
 set_project_properties_post_create_runs $proj_name
 
+# Import source files for simulation
+set sim_dirs [glob -nocomplain -type d $repo_path/src/sim/*]
+foreach sim_dir $sim_dirs {
+    set sim_name [file tail $sim_dir]
+    # Note: sim_1 already exists in a fresh project, testing for existance and only creating when a name is not found helps avoid an error
+    if {[get_fileset $sim_name] == ""} {
+        puts "INFO: Simulation set $sim_name does not exist, creating it"
+        create_fileset -simset $sim_name
+    }
+    set_property SOURCE_SET sources_1 [get_filesets $sim_name]
+    set top_found 0
+    foreach source_file [glob -nocomplain -type f $sim_dir/*] {
+        add_files -quiet -fileset $sim_name -norecurse $source_file
+        set module_name [file tail [file rootname $source_file]]
+        puts "INFO: Imported $source_file for $sim_name"
+        if {[string range $module_name end-2 end] == "_tb"} {
+            update_compile_order -fileset $sim_name
+            set_property top $module_name [get_filesets $sim_name]
+            puts "INFO: Picked $module_name as top-level testbench for $sim_name"
+            set top_found 1
+        }
+    }
+    if {$top_found == 0} {
+        puts "WARNING: No testbench (identified by suffix _tb) found in simulation set $sim_name"
+    }
+    set_property top_lib xil_defaultlib [get_filesets $sim_name]
+    update_compile_order -fileset $sim_name
+}
+
 # Get the post_build script path
 set post_build_script_path [file join ${repo_path} post_build.tcl]
 set post_build_script [glob -nocomplain ${post_build_script_path}]

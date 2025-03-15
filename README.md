@@ -244,6 +244,19 @@ If your new project was not created following the directory structure described 
 5. If the project has a software component, review appropriate documentation to release it as well.
 
 ----
+### 6. Using Simulations
+The checkout script now supports basic checkout of simulation sources. Manual checkin is required. Each set of simulation sources, representing a single simulation and testbench, receives its own folder under the `<repo>/src/sim` folder. Any source files, including Verilog, VHDL, and Vivado simulator waveform configuration file (.wcfg), loaded into this folder will be added exclusively to the simulation fileset represented by that folder. All project design sources are available to each simulation set. Importantly, the top module for the simulation fileset is automatically selected based on the suffix "_tb" (like "my_simulation_tb.v") showing up in one of the source file names in the simulation set folder - only one source file should include this suffix per simulation.
+
+Once checked out, to run any particular simulation:
+
+- In Vivado, navigate to the Sources tab's Simulation Sources dropdown.
+- Right-click on the dropdown for the simulation set of interest (for example, `sim_1`), and select "Make Active".
+- In the Flow Navigator, select "Run Simulation >> Run Behavioral Simulation".
+- Use simulation controls to navigate through the generated waveforms.
+- To run another simulation, simply set it as active and use "Run Behavioral Simulation" again. Once a simulation has been started, it can be rerun using "Relaunch Simulation" in the top bar.
+
+----
 ## Known Issues
 * Each developer may need their own version of the configuration file, config.ini, for each project they are working on. The configuration file should be moved to somewhere outside of the repo submodule to accomodate this, in a predictable location on Linux and Windows. The Python script will need to be updated to accomodate this, a location and less generic name will need to be chosen for the configuration file. Additional note, requiring that a single Xilinx install directory containing all versions to be used be included in the path may be a better solution.
 * There is some danger that modifications to Digilent's board files may break existing projects, it may be worth considering adding the vivado-boards repository as a submodule to project repositories.
+* `close_project -delete` does not remove the .sim project directory while simulations are open - to fully clear a `proj` directory for checkout, simulations either need to be manually closed before project deletion, or the leftover files manually deleted after.
