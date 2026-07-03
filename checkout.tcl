@@ -185,7 +185,7 @@ catch {
 # Create 'synth_1' run (if not found)
 if {[string equal [get_runs -quiet synth_1] ""]} {
     puts "INFO: Creating synth_1 run"
-    create_run -name synth_1 -part $part_name -flow {Vivado Synthesis $vivado_year} -strategy "Vivado Synthesis Defaults" -constrset constrs_1
+    create_run -name synth_1 -part $part_name -flow "Vivado Synthesis $vivado_year" -strategy "Vivado Synthesis Defaults" -constrset constrs_1
 } else {
     set_property strategy "Vivado Synthesis Defaults" [get_runs synth_1]
     set_property flow "Vivado Synthesis $vivado_year" [get_runs synth_1]
@@ -201,7 +201,7 @@ current_run -synthesis [get_runs synth_1]
 # Create 'impl_1' run (if not found)
 if {[string equal [get_runs -quiet impl_1] ""]} {
     puts "INFO: Creating impl_1 run"
-    create_run -name impl_1 -part $part_name -flow {Vivado Implementation $vivado_year} -strategy "Vivado Implementation Defaults" -constrset constrs_1 -parent_run synth_1
+    create_run -name impl_1 -part $part_name -flow "Vivado Implementation $vivado_year" -strategy "Vivado Implementation Defaults" -constrset constrs_1 -parent_run synth_1
 } else {
     set_property strategy "Vivado Implementation Defaults" [get_runs impl_1]
     set_property flow "Vivado Implementation $vivado_year" [get_runs impl_1]
