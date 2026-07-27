@@ -52,6 +52,36 @@ if {${idx} != -1} {
     set wait_on_build 1
 }
 
+# Handle -D NAME VALUE global Tcl variable overrides (repeatable, two
+# separate arguments). These are set in the global namespace before the
+# block design script(s) under src/bd are sourced below, so a project's own
+# BD script can read them to switch build-time options without hand-editing
+# the BD script itself (e.g. `-D MY_OPTION 1`, read via
+# `if {[info exists ::MY_OPTION]} {...}` in that project's BD script). This
+# script has no built-in knowledge of what any given NAME means -- that's
+# entirely up to each project's own BD script.
+#
+# NOTE: this intentionally takes NAME and VALUE as two separate tokens
+# ("-D NAME VALUE"), NOT a single "-D NAME=VALUE" token. On Windows,
+# vivado.bat's own batch-file argument parsing splits unquoted command-line
+# tokens on "=" (in addition to whitespace), so a single "-D NAME=VALUE"
+# token silently arrives here as two separate argv elements ("NAME" and
+# "VALUE") with no reliable way to rejoin them. Two tokens from the start
+# sidesteps that entirely and behaves identically on every platform.
+set idx 0
+while {[set idx [lsearch -start $idx ${argv} "-D"]] != -1} {
+    set define_name [lindex ${argv} [expr {${idx}+1}]]
+    set define_value [lindex ${argv} [expr {${idx}+2}]]
+    if {${define_name} eq ""} {
+        puts "WARNING: Ignoring malformed -D argument (expected -D NAME VALUE) at argv index $idx"
+        incr idx
+    } else {
+        set ::${define_name} ${define_value}
+        puts "INFO: Set global Tcl variable $define_name = $define_value (via -D)"
+        incr idx 3
+    }
+}
+
 # Other variables
 set vivado_year [lindex [split $vivado_version "."] 0]
 set proj_name [file rootname [file tail $xpr_path]]

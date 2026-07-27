@@ -48,13 +48,18 @@ def do_checkout(args):
     repo_path   = args['repo_path'].replace('\\', '/')
     version     = args['version'].replace('\\', '/')
     build       = args['build']
+    # Extra raw -tclargs tokens appended verbatim to the checkout.tcl call,
+    # e.g. '-D MY_OPTION 1' to set a global Tcl variable a project's own BD
+    # script can read (see checkout.tcl's -D handling). Optional; defaults
+    # to nothing so existing callers are unaffected.
+    extra_tclargs = args.get('extra_tclargs', '')
 
     if not args['force'] and not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % os.path.dirname(xpr_path)):
         sys.exit()
     
     print('Checking out project %s from repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
     notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
-    cmd = "%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s%s" % (
+    cmd = "%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s%s%s" % (
         vivado_cmd,
         script_path,
         notrace,
@@ -62,7 +67,8 @@ def do_checkout(args):
         xpr_path,
         repo_path,
         version,
-        ' -b' if build else ''
+        ' -b' if build else '',
+        ' %s' % extra_tclargs if extra_tclargs else ''
     )
     if DEBUG_NO_VIVADO:
         print ('vivado_cmd: %s' % vivado_cmd)
@@ -71,6 +77,7 @@ def do_checkout(args):
         print ('repo_path: %s' % repo_path)
         print ('version: %s' % version)
         print ('build: %s' % build)
+        print ('extra_tclargs: %s' % extra_tclargs)
         print(cmd)
     else:
         os.system(cmd)
