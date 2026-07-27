@@ -125,13 +125,72 @@ def clean_proj_dir(proj_dir, force):
     print('INFO: Cleaned %s' % proj_dir)
 
 
-def run_vivado_tcl(vivado_cmd, script_dir, tcl_name, xpr_path):
+def run_vivado_tcl(vivado_cmd, script_dir, tcl_name, xpr_path, repo_path, extra_args=''):
     """Runs a batch-mode vivado tcl script (export_xsa.tcl / archive_project.tcl) against xpr_path."""
     vivado_cmd = vivado_cmd.replace('\\', '/')
     script_path = os.path.join(script_dir, tcl_name).replace('\\', '/')
     xpr_path = xpr_path.replace('\\', '/')
-    cmd = "%s -mode batch -source %s -notrace -tclargs -x %s" % (vivado_cmd, script_path, xpr_path)
+    repo_path = repo_path.replace('\\', '/')
+    cmd = "%s -mode batch -source %s -notrace -tclargs -x %s -r %s%s" % (
+        vivado_cmd, script_path, xpr_path, repo_path, ' %s' % extra_args if extra_args else ''
+    )
     return os.system(cmd)
+
+
+def variant_xpr_path(base_xpr_path, variant_value):
+    """
+    Places this variant's project in its own subdirectory (named after
+    variant_value) under base_xpr_path's directory, so each variant gets a
+    fully separate project directory (all its .runs/.srcs/.cache/etc.) under
+    proj/, instead of sharing one proj/ directory with differently-prefixed
+    files.
+    """
+    proj_dir = os.path.dirname(base_xpr_path)
+    basename = os.path.basename(base_xpr_path)
+    return os.path.join(proj_dir, variant_value, basename)
+
+
+def do_one_project(args, script_dir, vivado_cmd, repo_path, xpr_path, extra_tclargs='', output_name=None):
+    """Runs the requested --checkout/--build/--xsa/--archive steps for a single project (xpr_path)."""
+    if args.checkout or args.build:
+        if os.path.isfile(xpr_path):
+            print('Error: cannot check out repo when project exists; re-run with --clean to remove %s first' % os.path.dirname(xpr_path))
+            sys.exit(1)
+
+        funcargs = {
+            'script_dir': script_dir,
+            'force': args.force,
+            'repo_path': repo_path,
+            'xpr_path': xpr_path,
+            'version': args.version,
+            'vivado_cmd': vivado_cmd,
+            'build': args.build,
+            'extra_tclargs': extra_tclargs,
+            'DEBUG_NO_VIVADO': False,
+            'DEBUG_VIVADO_TCL_TRACE': False,
+        }
+        git_vivado.do_checkout(funcargs)
+
+    # --xsa and --archive operate on an existing project (just checked out/built above,
+    # or already present from a prior run) and can be combined freely with each other.
+    if args.xsa or args.archive:
+        if not os.path.isfile(xpr_path):
+            print('Error: %s does not exist; run with --checkout or --build first' % xpr_path)
+            sys.exit(1)
+
+    output_extra = '-o %s' % output_name if output_name else ''
+
+    if args.xsa:
+        print('INFO: Exporting hardware platform (.xsa)')
+        if run_vivado_tcl(vivado_cmd, script_dir, 'export_xsa.tcl', xpr_path, repo_path, output_extra) != 0:
+            print('Error: xsa export failed')
+            sys.exit(1)
+
+    if args.archive:
+        print('INFO: Creating project release archive')
+        if run_vivado_tcl(vivado_cmd, script_dir, 'archive_project.tcl', xpr_path, repo_path, output_extra) != 0:
+            print('Error: project archive failed')
+            sys.exit(1)
 
 
 if __name__ == "__main__":
@@ -172,10 +231,27 @@ if __name__ == "__main__":
     parser.add_argument('--archive', dest='archive', default=False, action='store_true',
                          help='Create a project release ZIP archive under <repo>/release.\n'
                               'Can be used with or without --build (only needs project sources).')
+    parser.add_argument('--variant-tclvar', dest='variant_tclvar', type=str, default='',
+                         help='Name of a global Tcl variable to set (via checkout.tcl\'s -D) to one of\n'
+                              '--variant-values, once per value, so a project\'s own BD script can read\n'
+                              'it to switch build-time options -- this script has no built-in knowledge\n'
+                              'of what the variable means. Requires --variant-values. Example: a project\n'
+                              'whose BD script reads a "CODEC_VARIANT" global would pass\n'
+                              '--variant-tclvar CODEC_VARIANT --variant-values foo,bar.')
+    parser.add_argument('--variant-values', dest='variant_values', type=str, default='',
+                         help='Comma-separated values for --variant-tclvar. --checkout/--build/--xsa/\n'
+                              '--archive are applied once per value, as independent projects, each in\n'
+                              'its own subdirectory (named after the value) under the same parent\n'
+                              '(proj/) directory as -x/--xpr-path -- e.g. -x proj/foo.xpr with\n'
+                              '--variant-values a,b produces proj/a/foo.xpr and proj/b/foo.xpr.\n'
+                              '--clean (if given) still only cleans proj/ once, up front.')
     args = parser.parse_args()
 
     if not (args.clean or args.checkout or args.build or args.xsa or args.archive):
         parser.error('Nothing to do: specify at least one of --clean, --checkout, --build, --xsa, --archive')
+
+    if bool(args.variant_tclvar) != bool(args.variant_values):
+        parser.error('--variant-tclvar and --variant-values must be used together')
 
     repo_path = os.path.abspath(os.path.join(os.getcwd(), args.repo_path))
     xpr_path = os.path.abspath(os.path.join(os.getcwd(), args.xpr_path))
@@ -184,6 +260,7 @@ if __name__ == "__main__":
     if args.clean:
         clean_proj_dir(proj_dir, args.force)
 
+    vivado_cmd = None
     if args.checkout or args.build or args.xsa or args.archive:
         vivado_cmd = find_vivado_cmd(args.version, config_settings.get('VivadoInstallPath'))
         if not vivado_cmd:
@@ -193,39 +270,18 @@ if __name__ == "__main__":
             sys.exit(1)
         print('INFO: Using Vivado at %s' % vivado_cmd)
 
-    if args.checkout or args.build:
-        if os.path.isfile(xpr_path):
-            print('Error: cannot check out repo when project exists; re-run with --clean to remove %s first' % proj_dir)
-            sys.exit(1)
+    if args.variant_values:
+        variant_values = [v.strip() for v in args.variant_values.split(',') if v.strip()]
+        base_proj_name = os.path.splitext(os.path.basename(xpr_path))[0]
+        for variant_value in variant_values:
+            variant_xpr = variant_xpr_path(xpr_path, variant_value)
+            print('INFO: ===== %s=%s (%s) =====' % (args.variant_tclvar, variant_value, variant_xpr))
+            do_one_project(
+                args, script_dir, vivado_cmd, repo_path, variant_xpr,
+                extra_tclargs='-D %s %s' % (args.variant_tclvar, variant_value),
+                output_name='%s-%s' % (base_proj_name, variant_value),
+            )
+    else:
+        do_one_project(args, script_dir, vivado_cmd, repo_path, xpr_path)
 
-        funcargs = {
-            'script_dir': script_dir,
-            'force': args.force,
-            'repo_path': repo_path,
-            'xpr_path': xpr_path,
-            'version': args.version,
-            'vivado_cmd': vivado_cmd,
-            'build': args.build,
-            'DEBUG_NO_VIVADO': False,
-            'DEBUG_VIVADO_TCL_TRACE': False,
-        }
-        git_vivado.do_checkout(funcargs)
 
-    # --xsa and --archive operate on an existing project (just checked out/built above,
-    # or already present from a prior run) and can be combined freely with each other.
-    if args.xsa or args.archive:
-        if not os.path.isfile(xpr_path):
-            print('Error: %s does not exist; run with --checkout or --build first' % xpr_path)
-            sys.exit(1)
-
-    if args.xsa:
-        print('INFO: Exporting hardware platform (.xsa)')
-        if run_vivado_tcl(vivado_cmd, script_dir, 'export_xsa.tcl', xpr_path) != 0:
-            print('Error: xsa export failed')
-            sys.exit(1)
-
-    if args.archive:
-        print('INFO: Creating project release archive')
-        if run_vivado_tcl(vivado_cmd, script_dir, 'archive_project.tcl', xpr_path) != 0:
-            print('Error: project archive failed')
-            sys.exit(1)
