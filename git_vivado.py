@@ -1,4 +1,22 @@
 # PYTHON 3.X.X REQUIRED!!!
+"""
+git_vivado.py
+
+Moves a Vivado project between its working form (a project directory full of
+generated files, which does not belong in version control) and its source
+form (the tracked contents of the repository).
+
+Two operations, each a thin wrapper that assembles a vivado batch-mode
+command line around the matching Tcl script:
+
+  checkin  -- checkin.tcl reads an existing project and writes the sources
+              that describe it back into the repository
+  checkout -- checkout.tcl reads those sources and recreates the project,
+              optionally building it as well
+
+Both are also importable, so other tooling (clean_build.py) can drive the
+same code paths rather than duplicating the command-line construction.
+"""
 
 import os
 import sys
@@ -7,6 +25,11 @@ import argparse
 import platform
 
 def accept_warning(s):
+    """Asks the user to confirm a destructive action, returning their answer.
+
+    Repeats the prompt until a recognised response is given, so a stray
+    keypress cannot be read as consent.
+    """
     c = ''
     d = {'Y': True, 'y': True, 'N': False, 'n': False}
     while c not in d:
@@ -14,6 +37,12 @@ def accept_warning(s):
     return d[c]
 
 def do_checkin(args):
+    """Writes an existing Vivado project back into the repository.
+
+    Expects a dict with script_dir, vivado_cmd, xpr_path, repo_path, version,
+    force and the two DEBUG_ flags. Prompts before overwriting unless force
+    is set, since this rewrites tracked files in repo_path.
+    """
     DEBUG_NO_VIVADO = args['DEBUG_NO_VIVADO']
     DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
     
@@ -39,6 +68,19 @@ def do_checkin(args):
         os.system("%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s" % (vivado_cmd, script_path, notrace, xpr_path, repo_path, version))
     
 def do_checkout(args):
+    """Recreates a Vivado project from the repository, optionally building it.
+
+    Expects a dict with script_dir, vivado_cmd, xpr_path, repo_path, version,
+    build, force and the two DEBUG_ flags. These keys are optional:
+
+      extra_tclargs -- raw tokens appended to checkout.tcl's -tclargs
+      vivado_opts   -- raw vivado options placed before -mode batch
+      runner        -- callable invoked with the finished command line,
+                       defaulting to os.system
+
+    Returns the command's exit status. Prompts before overwriting the project
+    directory unless force is set.
+    """
     DEBUG_NO_VIVADO = args['DEBUG_NO_VIVADO']
     DEBUG_VIVADO_TCL_TRACE = args['DEBUG_VIVADO_TCL_TRACE']
     
@@ -53,14 +95,25 @@ def do_checkout(args):
     # script can read (see checkout.tcl's -D handling). Optional; defaults
     # to nothing so existing callers are unaffected.
     extra_tclargs = args.get('extra_tclargs', '')
+    # Extra raw vivado command-line options inserted before -mode batch,
+    # e.g. '-journal <path> -log <path>'. Needed when several vivado
+    # processes run concurrently, because they would otherwise all write to
+    # vivado.jou/vivado.log in the same working directory. Optional.
+    vivado_opts = args.get('vivado_opts', '')
+    # Callable used to actually run the assembled command line, defaulting to
+    # os.system (unchanged behavior). Concurrent callers substitute a runner
+    # that captures output per project, since os.system lets every process
+    # write straight to the shared console.
+    runner = args.get('runner') or os.system
 
     if not args['force'] and not accept_warning('Files and directories contained in %s may be overwritten. Do you wish to continue?' % os.path.dirname(xpr_path)):
         sys.exit()
     
     print('Checking out project %s from repo %s' % (os.path.basename(xpr_path), os.path.basename(repo_path)))
     notrace = '' if DEBUG_VIVADO_TCL_TRACE else ' -notrace'
-    cmd = "%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s%s%s" % (
+    cmd = "%s%s -mode batch -source %s%s -tclargs -x %s -r %s -v %s%s%s" % (
         vivado_cmd,
+        ' %s' % vivado_opts if vivado_opts else '',
         script_path,
         notrace,
         # arguments
@@ -79,8 +132,10 @@ def do_checkout(args):
         print ('build: %s' % build)
         print ('extra_tclargs: %s' % extra_tclargs)
         print(cmd)
-    else:
-        os.system(cmd)
+        return 0
+    # Returning the exit status lets callers detect a failed checkout/build.
+    # Previously discarded; existing callers that ignore it are unaffected.
+    return runner(cmd)
 
 if __name__ == "__main__":
     # Parse CONFIG.INI
