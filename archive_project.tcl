@@ -16,6 +16,13 @@
 # <repo>/proj/<project>.xpr) when omitted; pass this explicitly if the
 # project lives somewhere else under <repo> (e.g. nested one directory
 # deeper, such as <repo>/proj/<variant>/<project>.xpr).
+#
+# Optional: -t <temp_dir> overrides the scratch directory used while building
+# the archive. The default, <repo>/temp, is derived from the repo rather than
+# the project, so two projects archiving at the same time would share it --
+# and because variants of one design have the same project name, they would
+# stage into the very same path. Callers archiving projects in parallel pass
+# -t to keep the scratch areas separate.
 
 set idx [lsearch ${argv} "-x"]
 if {${idx} != -1} {
@@ -51,9 +58,13 @@ if {[file exists ${release_dir}] == 0} {
     file mkdir ${release_dir}
 }
 set temp_dir [file join ${repo_path} temp]
+set idx [lsearch ${argv} "-t"]
+if {${idx} != -1} {
+    set temp_dir [file normalize [lindex ${argv} [expr {${idx}+1}]]]
+}
 set zip_file [file join ${release_dir} "${output_name}.xpr.zip"]
 
-puts "INFO: Archiving project to ${zip_file}"
+puts "INFO: Archiving project to ${zip_file} (scratch: ${temp_dir})"
 archive_project ${zip_file} -temp_dir ${temp_dir} -force -include_local_ip_cache
 puts "INFO: Wrote out project release archive ${zip_file}"
 

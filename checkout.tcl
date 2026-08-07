@@ -1,6 +1,6 @@
 # Note: argument order does not matter when setting argv; all arguments are optional
 # Usage (No Defaults):
-#   set argv "-r <repo_path> -x <xpr_path> -v <vivado_version> -b -no-block"
+#   set argv "-r <repo_path> -x <xpr_path> -v <vivado_version> -b -no-block -ip-cache <dir>"
 #   source digilent_vivado_checkout.tcl
 # Usage (All Defaults):
 #   set argv ""
@@ -103,7 +103,20 @@ set part_name [get_property "part" $obj]
 puts "INFO: Configuring project IP handling properties"
 set_property "corecontainer.enable" "0" $obj
 set_property "ip_cache_permissions" "read write" $obj
-set_property "ip_output_repo" "[file normalize "$repo_path/proj/cache"]" $obj
+# The out-of-context IP cache is shared by every project checked out from
+# this repo, which is what makes a second checkout fast. That sharing is
+# only safe while checkouts run one at a time: two vivado processes
+# populating one cache concurrently can read a half-written entry. Callers
+# that build several projects in parallel therefore pass -ip-cache to give
+# each project its own cache directory.
+set idx [lsearch ${argv} "-ip-cache"]
+if {${idx} != -1} {
+    set ip_cache_dir [file normalize [lindex ${argv} [expr {${idx}+1}]]]
+} else {
+    set ip_cache_dir [file normalize "$repo_path/proj/cache"]
+}
+puts "INFO: Using IP cache directory $ip_cache_dir"
+set_property "ip_output_repo" $ip_cache_dir $obj
 
 # Create 'sources_1' fileset (if not found)
 if {[string equal [get_filesets -quiet sources_1] ""]} {
