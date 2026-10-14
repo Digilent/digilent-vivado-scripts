@@ -337,6 +337,31 @@ def find_vivado_cmd(version, configured_install_path=None):
     return None
 
 
+def tclapp_manifest_path():
+    if platform.system() == 'Windows':
+        base = os.path.join(os.environ.get('APPDATA', ''), 'Xilinx', 'Vivado')
+    else:
+        base = os.path.join(os.path.expanduser('~'), '.Xilinx', 'Vivado')
+    return os.path.join(base, 'tclapp', 'manifest.tcl')
+
+
+def check_tclapp_manifest(fix):
+    """Warns about a truncated tclapp manifest (breaks every vivado start); removes it if fix is set."""
+    path = tclapp_manifest_path()
+    if not os.path.isfile(path):
+        return
+    with open(path, 'r', errors='replace') as f:
+        apps = [line for line in f if line.lstrip().startswith('::tclapp::load_app')]
+    if len(apps) > 1:
+        return
+    print('WARNING: %s has only %d app entries (truncated by concurrent vivado starts?).' % (path, len(apps)))
+    if fix:
+        os.remove(path)
+        print('INFO: Removed %s, vivado regenerates it on the next start.' % path)
+    else:
+        print('         Use --fix-tclapp to remove it, or delete it manually.')
+
+
 def clean_proj_dir(proj_dir, force):
     """Deletes all contents of proj_dir except .keep (recreates proj_dir if missing)."""
     if not force and not git_vivado.accept_warning('All contents of %s will be permanently deleted.' % proj_dir):
@@ -542,6 +567,9 @@ if __name__ == "__main__":
     parser.add_argument('--verbose', dest='verbose', default=False, action='store_true',
                          help='With --jobs > 1, echo every line of each variant\'s output instead of\n'
                               'just milestones and errors. Logs always contain everything either way.')
+    parser.add_argument('--fix-tclapp', dest='fix_tclapp', default=False, action='store_true',
+                         help='Delete a truncated per-user vivado tclapp/manifest.tcl before running.\n'
+                              'It is always checked and a warning is printed if it looks truncated.')
     args = parser.parse_args()
 
     if not (args.clean or args.checkout or args.build or args.xsa or args.archive):
@@ -569,6 +597,7 @@ if __name__ == "__main__":
             print('       Checked root directories %s across all available drives/locations.' % VIVADO_ROOT_DIR_NAMES)
             sys.exit(1)
         print('INFO: Using Vivado at %s' % vivado_cmd)
+        check_tclapp_manifest(args.fix_tclapp)
 
     if args.variant_values:
         variant_values = [v.strip() for v in args.variant_values.split(',') if v.strip()]
