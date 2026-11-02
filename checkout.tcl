@@ -138,6 +138,10 @@ add_files -quiet -norecurse [glob -nocomplain $repo_path/src/hdl/*.v]
 add_files -quiet -norecurse [glob -nocomplain $repo_path/src/hdl/*.vhd]
 add_files -quiet -norecurse [glob -nocomplain $repo_path/src/hdl/*.sv]
 
+# Other sources saved by checkin, e.g. memory initialization files and headers
+puts "INFO: Adding other sources"
+add_files -quiet -norecurse [lsearch -inline -all -not -glob [glob -nocomplain -types f $repo_path/src/other/*] *.keep]
+
 puts "INFO: Adding XCI IP sources"
 add_files -quiet [glob -nocomplain $repo_path/src/ip/*/*.xci]
 add_files -quiet [glob -nocomplain $repo_path/src/ip/*/*.xcix]
@@ -191,9 +195,8 @@ foreach ip [get_ips -filter "IS_LOCKED==1"] {
     export_ip_user_files -of_objects $ip -no_script -sync -force -quiet
 }
 
-# Generate the wrapper of the root design, the catch skips projects without a
-# block design
-catch {
+# Generate the wrapper of the root design, projects without a block design are skipped
+if {[llength [get_files -quiet -filter "NAME=~*.bd && NAME!~*/bd/*/ip/*"]] == 1} {
     set bd_name [get_bd_designs -of_objects [get_bd_cells /]]
     set bd_file [get_files $bd_name.bd]
     set wrapper_file [make_wrapper -files $bd_file -top -force]
