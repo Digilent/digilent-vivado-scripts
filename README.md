@@ -1,556 +1,408 @@
-# Digilent Vivado Scripts
-
-## Introduction
-
-This repository contains a set of scripts for creating, maintaining, and
-releasing git repositories containing minimally version-controlled Vivado
-projects. A Python 3.6.3 (or newer) installation is required to use the Python
-frontend for these scripts. As of time of writing, no additional Python modules
-are depended on.
-
----
-
-## Quick Guide
-
-This guide covers only what is required to gain access to and build demo project
-sources. For more in-depth details on these steps, and for information on how to
-push changes to a demo repository or build a release, see the **Workflows**
-section of this document, below.
-
-### Prerequisites
-
-- You must have the URL for a demo repository that uses digilent-vivado-scripts
-  as a submodule.
-  
-    For the purposes of this guide, any time that the text `<demo>` appears, you
-    should replace it with the name of your chosen demo, as it appears at the
-    end of the URL. For example, for the [Zybo Z7-20 HDMI
-    demo](https://github.com/Digilent/Zybo-Z7-20-HDMI), `<demo>` should be
-    replaced with `Zybo-Z7-20-HDMI`.
-- Make sure that [Git](https://git-scm.com/) and a console application that can
-  use it are installed on your computer. Most Linux systems will already have
-  git installed. Windows users are recommended to use the Git Bash shell
-  available through <https://gitforwindows.org>.
-- Make sure you have the version of Vivado targeted by your chosen demo
-  repository installed on your computer. The README for your chosen demo will
-  describe which version of these tools it can be used with. Installation
-  instructions can be found in the [Installing Vivado, Xilinx SDK, and Digilent
-  Board Files](https://reference.digilentinc.com/vivado/installing-vivado/start)
-  guide on the Digilent Wiki. FIXME update link
-
-### Getting Demo Sources
-
-1. Open your git-compatible console or terminal application.
-1. Change directory (using the `cd` command) to the folder that you wish to put
-   the demo sources into. **Note:** *Take note of which directory you are in, it
-   will be used again later*
-1. Clone the chosen demo repository. Since the demo repository uses submodules,
-   you should specify the --recursive flag when cloning:
-  
-    `git clone --recursive https://github.com/Digilent/<demo>`
-1. *Only if* the chosen demo repository uses multiple branches to contain
-   multiple demos - which is described in the repository's README - then use the
-   steps below to get the correct sources for that branch.
-    1. Change the working directory to the folder the repo was cloned into:
-
-        `cd <demo>`
-    1. If you don't know if your chosen demo repository contains multiple demo
-       branches, or if you don't know the name of the demo branch you want to
-       check out, the following command can be used to list all available
-       branches:
-  
-        `git branch -a`
-    1. Check out the branch for the demo you wish to access:
-
-        `git checkout <demo branch>`
-    1. When checking out a branch, make sure to run the following commands. This
-       will make sure that the correct versions are used for any sources that are
-       included in the demo as submodules.
-
-        `git submodule init`
-
-        `git submodule update`
-
-### Initializing and Building the Vivado Project
-
-1. Launch the version of Vivado that your chosen demo targets.
-1. Once Vivado is open, open the TCL Console at the bottom of the screen.
-1. To initialize and open the Vivado project, run the following command in the
-   TCL console, changing `<path>` to match the location of the directory that
-   you noted down in Step 2 of the *Getting Demo Sources* section:
-
-    `set argv ""; source <path>/<demo>/scripts/checkout.tcl`
-1. At this point you now have access to the Vivado Project and all of its
-   sources. The project can be viewed, changes can be made, a bitstream can be
-   generated, and Xilinx shell architecture file (XSA) can be generated for
-   handoff to Vitis.
+# digilent-vivado-scripts
 
-### Final Notes
+This is a repo with scripts for creating, maintaining and releasing git repositories
+that contain minimally version-controlled Vivado projects. It contains solutions for the
+check in/out workflow, plus a clean/build helper that can also export the `.xsa` hardware
+handoff and a release archive. The scripts handle all the necessary tasks to ensure a
+smooth workflow for development of the `proj` Vivado project.
 
-At this point, you have access to a working copy of the demo repository. The
-chosen demo's README or wiki page will contain instructions on how to use this
-demo once it is programmed onto your board.
+**Note #1:**
+*To add this repository to a parent repository as a submodule, first open a terminal*
+*with access to `git`:*
 
-For technical support, please visit the [Digilent
-Forums](https://forum.digilentinc.com/forum/4-fpga).
+`git submodule add https://github.com/Digilent/digilent-vivado-scripts`
 
-This concludes the *Quick Guide*. The remainder of this document discusses the
-implementation of the digilent-vivado-scripts repository and how to use the
-scripts in more technical detail.
+**Note #2:**
+*The checkout/checkin scripts expect the parent repository to follow the layout below.*
+*Missing folders and files are created by `checkin`, see **Repository Structure**.*
 
----
+* `src\` holds the version-controlled sources: `bd`, `constraints`, `hdl`, `ip`,
+  `other` and optionally `sim`.
+* `repo\` holds local IP and IP submodules.
+* `proj\` holds the generated Vivado project (not version-controlled).
+* `hw_handoff\` holds the exported `.xsa` hardware platform.
 
-## Python Frontend
+**Note #3:**
+*Python 3.6.3 (or newer) is required for the Python front-ends. No additional Python*
+*modules are needed. Each script can also be sourced from the Vivado Tcl console.*
 
-A front-end script, git_vivado.py, is provided to parse command line arguments
-and call into Vivado at the command line.  This script has three subcommands:
-"checkout", "checkin", and "release". Each of these subcommands has its own help
-menu, which explains the arguments that can be passed to the script, as well as
-show what the default values of each of these arguments will be. All paths
-passed to the script are assumed to be relative to the current working
-directory.
+**Special Note:**
+*`git_vivado.py` writes `vivado.jou`/`vivado.log` to the current working directory.*
+*`clean_build.py` redirects them to `proj\logs\` (`proj\logs\<variant>\` for parallel*
+*variant builds).*
 
-**Note**: *Each script can instead be manually sourced within the TCL console in
-Vivado. When doing so, take care to properly set the `argv` variable, as
-described in each scripts' Example Usage subsection*
+----
 
----
+## Quick Checkout Guide
 
-## Commands / Scripts
+1. Clone the repository together with its submodules:
 
-### Checkout
+   `git clone --recursive <repo URL>`
 
-#### Checkout Description
+   If it was cloned non-recursively, initialize the submodules:
 
-This subcommand calls into checkout.tcl in order to create a Vivado project, in
-the form of an XPR file, using the sources and scripts contained in the project
-repository.
+   `git submodule update --init [--recursive]`
 
-#### Checkout Optional Arguments
+2. Some demo repositories use one branch per demo. After checking out a branch, update
+   the submodules again (same command as above).
 
-1. `-r <repo>`: Path to the repository directory. Default:
-   `<digilent-vivado-scripts>/..`
-1. `-x <xpr>`: Path to the project .xpr file the repo is to be checked out into.
-   Default: `<repo>/proj/<repo name>.xpr`
-1. `-v <version>`: Vivado version number. Default contained in config.ini.
-   (Python only)
-1. `-b`: Build project after its checked out. Depending on post_build script,
-   may also export files to hw_handoff and/or release directories.
-1. `-no-block`: If -b is specified, exit the script as soon as the build is
-   started. Not available in the Python script.
-**Note**: *All paths passed as arguments must either be absolute or relative to
-the current working directory.*
+3. If a project was checked out before, run `clean_build.py --clean` or delete the
+   `proj` folder first.
 
-#### Checkout Example Usage
+4. Create the project from a terminal, using the Python front-end:
 
-##### Checkout Example (Python)
+   `python <path-to-scripts-repo>\git_vivado.py checkout -v <version>`
 
-> `python3 git_vivado.py checkout -r D:/Github/Zybo-Z7/hw`
+   The project is created in `<repo>\proj\<repo name>.xpr`.
 
-##### Checkout Example (TCL)
+5. Or from the Vivado Tcl console, which opens the project right away:
 
-> `set argv "-r D:/Github/Zybo-Z7/hw"`
->
-> `source checkout.tcl`
+   `set argv ""; source <path-to-scripts-repo>/checkout.tcl`
 
----
+6. Open the project in Vivado (not needed for step 5). All sources are available, a
+   bitstream can be generated and an `.xsa` can be exported for Vitis.
 
-### Checkin
+**Note:**
+*The current working directory is irrelevant for the Tcl scripts when `-r` and `-x` are*
+*omitted: the defaults are derived from the location of the scripts.*
 
-#### Checkin Description
+----
 
-This subcommand calls into checkin.tcl in order to collect sources and generate
-needed scripts from a Vivado project into the repository structure described
-below. Files required for checkout *that are not already present* in the
-repository (such as project_info.tcl and gitignores), are automatically created.
-These files are not overwritten if they already exist.
+## Quick Checkin Guide
 
-#### Checkin Optional Arguments
+**Important:** *`checkin` updates the files in `src\` and removes the ones no longer in*
+*the project. `project_info.tcl`, `post_build.tcl` and `.gitignore` are created only when*
+*missing; delete one to have it recreated. Projects with more than one block design are*
+*not supported and stop with an error.*
 
-1. `-r <repo>`: Path to the repository directory. Default:
-   `<digilent-vivado-scripts>/..`
-1. `-x <xpr>`: Path to the project .xpr file to be processed for checkin.
-   Default: `<repo>/proj/*.xpr`
-1. `-v <version>`: Vivado version number. Default contained in config.ini.
-   (Python only)
+**Note:**
+*This section assumes that you have already created a Vivado project, either with*
+*`checkout` or by hand.*
 
-**Note**: *All paths passed as arguments must either be absolute or relative to
-the current working directory.*
+1. Build the project in Vivado. Do NOT export the hardware yet.
 
-#### Checkin Example Usage
+2. Close or keep the project open, both work. Run the check in:
 
-##### Checkin Example (Python)
+   `python <path-to-scripts-repo>\git_vivado.py checkin -x <xpr path>`
 
-> `python3 git_vivado.py checkin -r D:/Github/Zybo-Z7/hw`
+   Or from the Vivado Tcl console:
 
-##### Checkin Example (TCL)
+   `set argv "-x <xpr path>"; source <path-to-scripts-repo>/checkin.tcl`
 
-> `set argv "-r D:/Github/Zybo-Z7/hw"`
->
-> `source checkin.tcl`
+3. Use `git status` to see what changed under `src\`, then commit logically
+   (one commit per concern).
 
----
+4. Export the hardware platform to `hw_handoff\` and commit it separately, so it is
+   easy to tell which `.xsa` belongs to which version (see **Quick Build Guide**).
 
-### Clean / Build Helper (clean_build.py)
+----
 
-#### Clean/Build Helper Description
+## Quick Build Guide
 
-`clean_build.py` is an additional, additive front-end script (it does not
-change or replace any git_vivado.py behavior) that combines cleaning the
-`proj/` working directory with (re)creating and/or building the project via
-`git_vivado.do_checkout()`, and optionally exporting a hardware handoff
-(.xsa) and/or a project release archive afterwards. It also auto-detects the
-local Vivado install path instead of requiring config.ini to be edited by
-hand for every machine.
+`clean_build.py` combines cleaning `proj\`, creating and/or building the project,
+and optionally exporting the `.xsa` and a release archive, in one command.
+It does not change any `git_vivado.py` behavior.
 
-#### Vivado install auto-discovery
+1. Close Vivado if it has the project open.
 
-Starting with Vivado 2025.1, AMD renamed the default installation root from
-`Xilinx` to `AMDDesignTools`, and in some versions the on-disk layout itself
-changed from `<root>/Vivado/<version>/bin` (older) to
-`<root>/<version>/Vivado/bin` (2025.1+). Vivado may also be installed on any
-drive/partition letter, not just `C:`. `clean_build.py` resolves the Vivado
-command in this order:
+2. Run the helper. It finds the Vivado install on its own, see **Vivado Auto-Discovery**:
 
-1. `config.ini`'s `VivadoInstallPath` + `<version>` (existing/unchanged
-   behavior), tried against both known on-disk layouts.
-1. Auto-scan: on Windows, every available drive letter (found via
-   `ctypes.windll.kernel32.GetLogicalDrives()`) is checked for both root
-   directory names (`AMDDesignTools`, `Xilinx`) and both layouts; on Linux, a
-   handful of common install locations (`/opt`, `/tools`, `~`) are checked
-   the same way.
+   `python <path-to-scripts-repo>\clean_build.py -v <version> --clean --build`
 
-#### Clean/Build Helper Optional Arguments
+3. Typical variations:
 
-1. `-r <repo>`: Path to the repository directory. Default:
-   `<digilent-vivado-scripts>/..`
-1. `-x <xpr>`: Path to the project .xpr file. Default: `<repo>/proj/<repo
-   name>.xpr`
-1. `-v <version>`: Vivado version number, used both for the checkout.tcl call
-   and for locating the Vivado install. Default contained in config.ini.
-1. `-f`: Skip confirmation prompts.
-1. `--clean`: Delete all contents of `proj/` (except `.keep`) before doing
-   anything else. Use this before `--checkout`/`--build` when a project already
-   exists there.
-1. `--checkout`: (Re)create the Vivado project only, without building it.
-1. `--build`: Create (if needed) and build the whole project: synth -> impl ->
-   write_bitstream. Takes precedence over `--checkout` if both are given.
-1. `--xsa`: Export a fixed, bitstream-included hardware platform (`.xsa`) to
-   `<repo>/hw_handoff`, via `export_xsa.tcl`. Requires an already-built project
-   (combine with `--build`, or run afterwards).
-1. `--archive`: Create a project release ZIP archive under `<repo>/release`, via
-   `archive_project.tcl`. Only requires project sources to exist (works with or
-   without `--build`).
+   `python <path-to-scripts-repo>\clean_build.py -v <version> --clean --checkout` (create only)
 
-All of the flags above are independent and can be combined freely; at least
-one must be given.
+   `python <path-to-scripts-repo>\clean_build.py -v <version> --build --xsa` (build, then export)
 
-**Note**: *All paths passed as arguments must either be absolute or relative to
-the current working directory.*
+   `python <path-to-scripts-repo>\clean_build.py -v <version> --archive` (release ZIP only)
 
-#### Clean/Build Helper Example Usage
+4. Output:
 
-##### Clean/Build Helper Example (Python)
+   * `<repo>\proj\` holds the project.
+   * `<repo>\hw_handoff\<top>.xsa` holds the hardware platform (`--xsa`).
+   * `<repo>\release\<project>.xpr.zip` holds the archive (`--archive`).
+   * `<repo>\proj\logs\<variant>\<step>.log` holds the full logs of each variant.
 
-> `python clean_build.py -v 2025.2 --clean --checkout`
->
-> `python clean_build.py -v 2025.2 --clean --build --xsa --archive`
+**Note:**
+*All flags are independent and can be combined; at least one is required.*
+*`--build` takes precedence over `--checkout`.*
 
----
+### Building Variants
 
-## Other Files and Overall Structure
+A project's own BD script can read a global Tcl variable to switch build-time options
+(for example a hardware option fitted on the board). `clean_build.py` builds one
+independent project per value:
+
+`python <path-to-scripts-repo>\clean_build.py -v <version> --clean --build --xsa -j 0 --variant-tclvar <NAME> --variant-values <a>,<b>`
+
+* Each variant gets its own subdirectory: `proj\<value>\<project>.xpr`.
+* Each variant gets its own IP cache (`proj\cache-<value>`), logs, archive scratch and
+  per-user Xilinx directory (`proj\user-<value>`, with your licenses copied in), so
+  parallel builds cannot corrupt each other. Vivado rewrites its shared `tclapp` manifest
+  on every start, and concurrent starts break runs with `tclapp::load_apps failed`.
+* A run that still fails that way is repeated once; real design errors are not retried.
+* `-j 0` runs one job per variant. A full build needs roughly 8 GB of RAM per job.
+* The scripts have no knowledge of what the variable means; it is up to the BD script.
+
+### Vivado Auto-Discovery
+
+Since Vivado 2025.1 the default install root is `AMDDesignTools` instead of `Xilinx`
+and the layout changed from `<root>/Vivado/<version>/bin` to `<root>/<version>/Vivado/bin`.
+`clean_build.py` resolves the Vivado command in this order:
+
+1. The install root saved in `config.ini` (or given with `-i`), trying both layouts.
+2. Auto-scan of all drive letters on Windows, or `/opt`, `/tools`, `~` on Linux, for
+   both root names and both layouts.
+
+The version and install root that were found are saved to `<repo>\config.ini`, so later
+runs need no flags. The same applies to `git_vivado.py`. Without `-v` or a saved version,
+the newest installed version is used.
+
+----
+
+## Command Reference (copy/paste, replace placeholders as needed)
+
+**Note:**
+*Replace `<version>` with the installed Vivado version (e.g. `2025.2`), `<xpr path>`*
+*with the project file and `<path-to-scripts-repo>` with the absolute or relative path*
+*to this repository (the scripts submodule). Paths passed as arguments must be absolute*
+*or relative to the current working directory.*
+
+**`git_vivado.py` global flag** (goes before the subcommand, e.g. `git_vivado.py -f checkout`):
+
+* `-f`: skip confirmation prompts.
+
+**`git_vivado.py checkout` flags** (combinable):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-r <repo>` | Repository directory | `<scripts>/..` |
+| `-x <xpr>` | Project file to create | `<repo>/proj/<repo name>.xpr` |
+| `-v <version>` | Vivado version, saved to `config.ini` | `config.ini`, else newest installed |
+| `-i <install root>` | Vivado install root, saved to `config.ini` | `config.ini` |
+| `-b` | Build the project after checkout; the `post_build.tcl` runs after it | off |
+
+**`checkout.tcl` flags** (set in `argv`, combinable):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-r <repo>` | Repository directory | `<scripts>/..` |
+| `-x <xpr>` | Project file to create | `<repo>/proj/<repo name>.xpr` |
+| `-v <version>` | Vivado version | `version -short` |
+| `-b` | Build after checkout | off |
+| `-no-block` | With `-b`, return as soon as the build starts | off |
+| `-ip-cache <dir>` | IP output repository, one per project for parallel builds | `<repo>/proj/cache` |
+| `-D <NAME> <VALUE>` | Set a global Tcl variable for the BD script (repeatable) | none |
+
+**Note:**
+*`-D` takes NAME and VALUE as two separate tokens, not `NAME=VALUE`, because*
+*`vivado.bat` splits unquoted arguments on `=`.*
+
+**`git_vivado.py checkin` / `checkin.tcl` flags** (combinable):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-r <repo>` | Repository directory | `<scripts>/..` |
+| `-x <xpr>` | Project file to check in | `<repo>/proj/*.xpr` |
+| `-v <version>` | Vivado version (Python only) | `config.ini`, else newest installed |
+| `-i <install root>` | Vivado install root (Python only) | `config.ini` |
+
+**`clean_build.py` flags** (combinable, at least one action required):
+
+| Flag | Description |
+|------|-------------|
+| `-r <repo>`, `-x <xpr>`, `-v <version>`, `-i <install root>` | Same as above |
+| `-f` | Skip confirmation prompts |
+| `--clean` | Delete the contents of `proj\` (except `.keep`) first |
+| `--checkout` | (Re)create the project, no build |
+| `--build` | Create (if needed) and build: synth, impl, write_bitstream |
+| `--xsa` | Export the fixed `.xsa` with bitstream to `hw_handoff\` |
+| `--archive` | Create the release ZIP in `release\` |
+| `--variant-tclvar <NAME>` | Tcl variable set once per `--variant-values` entry |
+| `--variant-values <a,b>` | Comma-separated values, one project each |
+| `-j`, `--jobs <N>` | Concurrent variants, `0` is one per variant (default 1) |
+| `--verbose` | With `-j` above 1, echo every output line |
+| `--fix-tclapp` | Delete a truncated per-user Vivado `tclapp\manifest.tcl` |
+
+**`export_xsa.tcl` and `archive_project.tcl` flags** (set in `argv`):
+
+| Flag | Script | Description |
+|------|--------|-------------|
+| `-x <xpr>` | both | Project file (required) |
+| `-o <name>` | both | Output name, avoids clashes between variants |
+| `-r <repo>` | both | Repo for `hw_handoff\`/`release\`, default is the xpr grandparent |
+| `-t <dir>` | archive | Scratch directory, default `<repo>/temp` |
+
+**Windows / Linux (`python` / `python3`)**:
+
+```bat
+:: create the project only
+python <path-to-scripts-repo>\git_vivado.py checkout
+
+:: create and build the project
+python <path-to-scripts-repo>\git_vivado.py checkout -b -v <version>
+
+:: back up the current project sources into src\
+python <path-to-scripts-repo>\git_vivado.py checkin -x <xpr path>
+
+:: wipe proj\ and rebuild from scratch
+python <path-to-scripts-repo>\clean_build.py -v <version> --clean --build
+
+:: full flow: rebuild, export the xsa and create the release archive
+python <path-to-scripts-repo>\clean_build.py -v <version> --clean --build --xsa --archive
+```
+
+**Vivado Tcl console**:
+
+```tcl
+# create the project
+set argv ""; source <path-to-scripts-repo>/checkout.tcl
+
+# create and build, with a build-time option for the BD script
+set argv "-b -D <NAME> <VALUE>"; source <path-to-scripts-repo>/checkout.tcl
+
+# check in the opened project
+set argv "-x <xpr path>"; source <path-to-scripts-repo>/checkin.tcl
+
+# export the xsa of a built project
+set argv "-x <xpr path> -o <name>"; source <path-to-scripts-repo>/export_xsa.tcl
+```
+
+----
+
+## Repository Structure
+
+**Note:**
+*Using the scripts as a submodule keeps changes here from breaking the projects.*
+
+| Path | Description |
+|------|-------------|
+| `<project repo>/<scripts>` | This submodule |
+| `<project repo>/hw_handoff` | Exported hardware handoff (`.xsa`) |
+| `<project repo>/proj` | Checked-out Vivado project and generated sources |
+| `<project repo>/release` | Release ZIP archives |
+| `<project repo>/temp` | Scratch space for the archive |
+| `<project repo>/repo` | Local IP and IP submodules |
+| `<project repo>/src/bd` | Tcl script that re-creates the block design |
+| `<project repo>/src/constraints` | XDC constraint files |
+| `<project repo>/src/hdl` | Verilog, VHDL and SystemVerilog sources |
+| `<project repo>/src/ip` | XCI files for non-IPI projects |
+| `<project repo>/src/other` | Other sources, e.g. memory initialization files |
+| `<project repo>/src/sim` | One folder per simulation set |
+| `<project repo>/.gitignore` | Template generated by the first checkin |
+| `<project repo>/project_info.tcl` | Board, part and run settings, see below |
+| `<project repo>/post_build.tcl` | Runs after a blocking `-b` build, see below |
+| `<project repo>/README.md` | How to use the project and its release archive |
+
+* `project_info.tcl` is generated by the first checkin. Edit it to configure settings
+  that are not captured, and delete it to recreate it when porting to another board.
+* `post_build.tcl` is a stub generated by the first checkin. Customize it to export
+  the bitstream, the `.xsa` or a release archive (examples are in the template).
 
 ### Configuration File
 
-The digilent-vivado-scripts repository contains a file named `config.ini`. This
-file contains several values used by the Python frontend to determine what the
-default arguments for the different subcommands should be. It has not yet been
-decided how this file should be managed/version-controlled. See *Known Issues*
-at the bottom of this document for a little more information.
+`<project repo>\config.ini` holds the Vivado install root and version of this machine.
+It is written by `git_vivado.py` and `clean_build.py` from `-v` and `-i`, is not
+version-controlled, and can be deleted at any time to be detected again.
 
-### Repository Structure
+```ini
+[Vivado]
+installpath = <drive>/AMDDesignTools
+version = <version>
+```
 
-In order to ensure that any changes to this repository do not break the projects
-that use them, it is expected that this repository will be used as a submodule
-of each project repository that is intended to use them.
-
-- `<project repo>/scripts`: Submodule containing the scripts described by this
-  document.
-- `<project repo>/hw_handoff`: Used to contain the hardware handoff file.
-- `<project repo>/proj`: Used to contain a checked-out Vivado project, and
-  cached generated sources.
-- `<project repo>/release`: Contains temporary files necessary to generate a
-  release zip archive.
-- `<project repo>/repo`: Contains local IP, IP submodules.
-- `<project repo>/src`: Contains source files for the Vivado Project.
-  - `<project repo>/src/bd`: Contains a TCL script used to re-create a block
-    design.
-  - `<project repo>/src/constraints`: Contains XDC constraint files.
-  - `<project repo>/src/hdl`: Contains Verilog and VHDL source files.
-  - `<project repo>/src/ip`: Contains XCI files describing IP to be instantiated
-    in non-IPI projects.
-  - `<project repo>/src/others`: Contains all other required sources, such as
-    memory initialization files.
-- `<project repo>/.gitignore`: File describing which sources should be version
-  controlled. Template is generated by the checkin process.
-- `<project repo>/.gitmodules`: File describing submodules of the repository.
-  Automatically maintained by the `git submodule` command.
-- `<project repo>/project_info.tcl`: Script generated by first-time checkin used
-  to save and re-apply project settings like board/part values. This can be
-  modified after initial creation to manually configure settings that are not
-  initially supported. **Note**: *This script should be deleted and recreated
-  when porting a project from one board to another.*
-- `<project repo>/post_build.tcl`: Script generated by first-time checkin that
-  is run after checkout builds. Intended to be used to export handoff and
-  release files.
-- `<project repo>/README.md`: Markdown file describing the project and the
-  process needed to use it, from downloading the release archive, to programming
-  the FPGA.
-
----
+----
 
 ## Workflows
 
-### 1. Cloning a Repo that uses this Submodule
+### 1. Creating a New Project
 
-In a console, first change the working directory (`cd`) to the location you wish
-to place the local version of the repo you will be cloning.
+1. Create a folder named `<board>-<variant>-<project name>`
+   (e.g. `Zybo-Z7-20-DMA`) and a GitHub repository with the same name.
+   Do not let GitHub create a README, gitignore or license.
 
-Clone the repository from github, using the `--recursive` flag, in order to pick
-up this and any other submodules installed in the repo.
+2. Initialize the repo, add the scripts and set the remote:
 
-- `git clone --recursive <repo URL>`
+   * `git init`
+   * `git submodule add https://github.com/Digilent/digilent-vivado-scripts`
+   * `git remote add origin <remote repo URL>`
 
-**Important:** *Further example commands in this document assume that the
-working directory of the console you are running them in has been set to the
-cloned repo directory: `cd <repo>`*
+3. While developing the project in Vivado:
 
-If the repo was cloned non-recursively, the repo's submodules must be
-initialized from a console:
+   * Place the Vivado project in the `proj` folder of the repo.
+   * Export the hardware to the `hw_handoff` folder of the repo.
+   * Add IP libraries, e.g. [vivado-library](https://github.com/Digilent/vivado-library),
+     as submodules inside the `repo` folder.
 
-- `git submodule init`
+4. Check in the project. Missing folders and files, including gitignores, are created:
 
-#### Vivado
+   `python <path-to-scripts-repo>\git_vivado.py checkin`
 
-Once the repo exists locally, the Vivado project can be checked out from source.
-To do this, use the following command:
+5. Write a README describing what the project does and how to use a release archive.
 
-- `python3 ./digilent-vivado-scripts/git_vivado.py checkout`
+6. Commit and push, then create the release archive (see workflow 4).
 
-Alternatively, the project can be checked out from within Vivado, by calling the
-following command in the TCL console:
+### 2. Creating a Repo from a Local Project
 
-- `set argv ""; source ./digilent-vivado-scripts/checkout.tcl`
+Use this when the project was not created with the layout of workflow 1.
 
-Both of these commands create a Vivado project within the repository's `proj`
-folder. In the case of the Python command, the project then needs to be opened
-from within Vivado.
+1. Create the GitHub repository (same rules as above) and clone it recursively.
 
-### 2. Creating a New Project
+2. Add the scripts: `git submodule add https://github.com/Digilent/digilent-vivado-scripts`
 
-1. Create a folder on your computer to hold the project repository. Use the
-   naming convention `<board>-<variant>-<project name>` (for example:
-   `Zybo-Z7-20-DMA`). This folder will be referred to as the "local repo"
+3. Check the local project in, creating the folders, files and sources:
 
-2. Create a repository on GitHub for your project with Digilent as the owner.
-   Name it the same as the local repo folder. Do not have Github create a
-   README, gitignore file, or license for you. This repository will be referred
-   to as the "remote repo".
+   `python <path-to-scripts-repo>\git_vivado.py checkin -x <xpr path>`
 
-3. In a command line interface (git bash is recommended) cd into the local repo.
-   Call the following set of commands, in order to initialize the repository,
-   add these scripts to it, and set its remote.
-   - `git init`
-   - `git submodule add https://github.com/Digilent/digilent-vivado-scripts`
-   - `git remote add origin <remote repo URL>`
+4. Edit the generated `project_info.tcl` if the checkout needs different settings.
 
-4. While creating and developing your project using Vivado, there are a few
-   guidelines to follow:
-   - When creating the project, make sure to place the Vivado project in a
-     folder named `proj` in the local repo.
-   - When exporting hardware, make sure to export to the folder named
-     `hw_handoff` in the local repo.
-   - If IPs or interfaces from
-     [vivado-library](https://github.com/Digilent/vivado-library) are required,
-     create a folder called `repo` in the local repo, and add vivado-library as
-     a submodule within that folder.
+5. Write the README, then commit and push.
 
-5. Call the command below. This command can be called from anywhere in your
-   filesystem, with relative paths changed as required. Missing required folders
-   and files are automatically created, including gitignores. **Note:**
-   *Invoking the script in this way uses all default arguments, which assume
-   that the local repo directory structure is used. See* Creating a Repo from a
-   Local Project, *below, for an alternate method.*
-   - `python3 ./digilent-vivado-scripts/git_vivado.py checkin`
+### 3. Making Changes to a Project
 
-6. Create a README for the repo that specifies what the project is supposed to
-   do and how to use a release archive for it. See *Using a Release Archive*,
-   below, and the file `template_README.md` in digilent-vivado-scripts for more
-   information.
+1. Clone the project recursively, or pull it if a local copy exists.
 
-7. Add, commit, and push your changes to the remote repo:
+2. Only if the Vivado project must change: run `checkout`, change and build the
+   project in Vivado (do NOT export hardware yet), then run `checkin`.
 
-   - `git add .`
-   - `git commit -m "Initial Commit"`
-   - `git push origin master`
+3. Update the README, then commit and push with an informative message.
 
-8. Create and upload a release ZIP to Github - see *Creating a Release Archive*
-   below.
+4. Export the hardware platform to `hw_handoff\` and commit it separately,
+   e.g. with the message "Export hardware".
 
----
+5. Create the release archive (workflow 4).
 
-### 3. Creating a Repo from a Local Project
+### 4. Creating a Release Archive
 
-If your new project was not created following the directory structure described
-in *Creating a New Project*, above, this is the workflow to follow. This flow is
-a little more in depth. It assumes that a project has already been created.
+1. Make sure the repo has a README.
 
-1. Create a repository on GitHub for your project with Digilent as the owner.
-   Name it the same as the local repo folder. Do not have Github create a
-   README, gitignore file, or license for you. This repository will be referred
-   to as the "remote repo". Clone this repository to your computer - the folder
-   where the repository is placed will be referred to as the "local repo".
-   - `cd <intended parent directory of the local repo>`
-   - `git clone --recursive <remote repo URL>`
+2. Create the archive with `clean_build.py --archive`, or with Vivado's
+   File > Project > Archive. It packages all sources, including IP and board files.
 
-2. In a command line interface (git bash is recommended) cd into the local repo.
-   Call the following command in order add these scripts to the repository.
-   - `git submodule add https://github.com/Digilent/digilent-vivado-scripts`
+3. Name the ZIP `<project name>-<vivado version>-<minor version>.zip`
+   (e.g. `Zybo-Z7-20-DMA-2018.2-3.zip`).
 
-3. Use the checkin command of git_vivado.py to check the local project into the
-   local repo, adding required folders, required files, and the projects
-   sources:
-   - `cd digilent-vivado-scripts`
-   - `python3 git_vivado.py checkin -x <XPR file>`
-   - `cd ..`
+4. Draft a GitHub release:
 
-4. If any changes need to be made to the project during the checkout process,
-   the project_info.tcl generated by the checkin command should be manually
-   edited.
+   * Tag: `v<vivado version>-<minor version>` (e.g. `v2018.2-3`).
+   * Title: project name and the supported tool version.
+   * Description: the name of the ZIP the user must download.
 
-5. Create a README for the repo that specifies what the project is supposed to
-   do and how to use a release archive for it. See *Using a Release Archive*,
-   below, and the file `template_README.md` in digilent-vivado-scripts for more
-   information.
+5. If the project has a software component, release it as well.
 
-6. Add, commit, and push your changes to the remote repo:
-   - `git add .`
-   - `git commit -m "Initial Commit"`
-   - `git push origin master`
+### 5. Using Simulations
 
-7. Create and upload a release ZIP to Github - see *Creating a Release Archive*
-   below.
+`checkout` supports basic checkout of simulation sources. Checkin is manual.
 
----
+* Each simulation (sources and testbench) gets its own folder in `<repo>/src/sim`.
+* Files in it (Verilog, VHDL, `.wcfg`) go only into the simulation fileset of that folder.
+* All design sources are available to every simulation set.
+* The top module is the file with the suffix `_tb` (e.g. `my_simulation_tb.v`).
+  Only one file per simulation should have it.
 
-### 4. Making Changes to a Project that uses this Submodule
+To run a simulation:
 
-1. Clone the Vivado project to be changed. **Note**: *Pull the repo instead, if
-   you already have a local instance of the project.*
-   - `git clone --recursive <remote repo URL>`
-
-2. In a command line interface (git bash is recommended for Windows) cd into the
-   local project.
-
-   **NOTE**: Steps 3, 4, and 5 are only required if changes to the Vivado project
-   are required.
-
-3. Call the command below. This command can be called from anywhere in your
-   filesystem, with the relative path to git_vivado. This will also create a
-   gitignore file for the repository. Default arguments will create the XPR at
-   `<project repo>/proj/<project name>.xpr`.
-   - `python3 <path to digilent-vivado-scripts>/git_vivado.py checkout`
-
-4. Open the project in Vivado and make any changes necessary (perhaps upgrading
-   IP or fixing a bug). Build the project. Do NOT export hardware yet.
-
-5. Call the command below. This command can be called from anywhere in your
-   filesystem, with the relative path to git_vivado changed as required. Default
-   arguments are fine, as they assume the use of the `proj` folder.
-   - `python3 <path to digilent-vivado-scripts>/git_vivado.py checkin`
-
-6. Make sure to update the repo's README as required.
-
-7. Add, commit, and push your changes.
-   - `git add .`
-   - `git commit -m "Write an informative message here"`
-   - `git push origin master`
-
-8. Export the hardware platform from Vivado into the local repo's `hw_handoff`
-   folder. Commit and push it with the commit message "Export Hardware".
-
-9. Create and upload a release ZIP to GitHub - see *Creating a Release Archive*
-   below.
-
----
-
-### 5. Creating a Release Archive
-
-1. If a README has not been created for the repo, first create one.
-
-2. Use Vivado's File > Project > Archive menu option to create a release ZIP
-   file for the project. This will package all sources depended on by the
-   project, including IP and board files into a single ZIP, allowing it to be
-   used on a system that does not have these sources previously installed.
-
-3. Take the new ZIP archive, and add a minor version number to its name, such
-   that the name follows the pattern: `<project name>-<vivado version
-   number>-<minor version number>.zip` (for example,
-   `Zybo-Z7-20-DMA-2018.2-3.zip`).
-
-4. Draft a new release on Github and upload the ZIP to it. Give the release a
-   descriptive title including the name of the project and the tool version
-   number it supports. Use the format `v<vivado version number>-<minor version
-   number>` (for example, `v2018.2-3`) for the version tag. Add text specifying
-   the name of the ZIP that the user must download to the release's description
-   field.
-
-5. If the project has a software component, review appropriate documentation to
-   release it as well.
-
----
-
-### 6. Using Simulations
-
-The checkout script now supports basic checkout of simulation sources. Manual
-checkin is required. Each set of simulation sources, representing a single
-simulation and testbench, receives its own folder under the `<repo>/src/sim`
-folder. Any source files, including Verilog, VHDL, and Vivado simulator waveform
-configuration file (.wcfg), loaded into this folder will be added exclusively to
-the simulation fileset represented by that folder. All project design sources
-are available to each simulation set. Importantly, the top module for the
-simulation fileset is automatically selected based on the suffix "_tb" (like
-"my_simulation_tb.v") showing up in one of the source file names in the
-simulation set folder - only one source file should include this suffix per
-simulation.
-
-Once checked out, to run any particular simulation:
-
-- In Vivado, navigate to the Sources tab's Simulation Sources dropdown.
-- Right-click on the dropdown for the simulation set of interest (for example,
-  `sim_1`), and select "Make Active".
-- In the Flow Navigator, select "Run Simulation >> Run Behavioral Simulation".
-- Use simulation controls to navigate through the generated waveforms.
-- To run another simulation, simply set it as active and use "Run Behavioral
-  Simulation" again. Once a simulation has been started, it can be rerun using
-  "Relaunch Simulation" in the top bar.
-
----
-
-## Known Issues
-
-- Each developer may need their own version of the configuration file,
-  config.ini, for each project they are working on. The configuration file
-  should be moved to somewhere outside of the repo submodule to accomodate this,
-  in a predictable location on Linux and Windows. The Python script will need to
-  be updated to accomodate this, a location and less generic name will need to
-  be chosen for the configuration file. Additional note, requiring that a single
-  Xilinx install directory containing all versions to be used be included in the
-  path may be a better solution.
-- There is some danger that modifications to Digilent's board files may break
-  existing projects, it may be worth considering adding the vivado-boards
-  repository as a submodule to project repositories.
-- `close_project -delete` does not remove the .sim project directory while
-  simulations are open - to fully clear a `proj` directory for checkout,
-  simulations either need to be manually closed before project deletion, or the
-  leftover files manually deleted after.
+1. In the Sources tab, right-click the simulation set (e.g. `sim_1`), "Make Active".
+2. In the Flow Navigator select "Run Simulation > Run Behavioral Simulation".
+3. To run another one, make it active and run again. "Relaunch Simulation" reruns it.
