@@ -1,43 +1,47 @@
-# Opens an existing (already built) Vivado project and exports a fixed,
-# bitstream-included hardware platform (.xsa) to <repo>/hw_handoff.
+# export_xsa.tcl
+#
+# Export a fixed hardware platform (.xsa) with bitstream from a built project.
 #
 # Usage:
-#   set argv "-x <xpr_path>"
+#   set argv "-x <xpr_path> [-o <name>] [-r <repo_path>]"
 #   source export_xsa.tcl
 #
-# Optional: -o <name> overrides the output filename (<name>.xsa) instead of
-# the default, which is named after the design's top module. Useful when
-# multiple projects built from the same top module (e.g. different
-# build-time variants of the same design) need distinct .xsa filenames so
-# they don't overwrite each other in hw_handoff.
-#
-# Optional: -r <repo_path> overrides where <repo>/hw_handoff is created.
-# Defaults to the xpr_path's grandparent directory (i.e. assumes
-# <repo>/proj/<project>.xpr) when omitted; pass this explicitly if the
-# project lives somewhere else under <repo> (e.g. nested one directory
-# deeper, such as <repo>/proj/<variant>/<project>.xpr).
+# Arguments:
+#   -x  project file, required
+#   -o  output name (<name>.xsa), default is the top module;
+#       gives build variants of one top module distinct files
+#   -r  repo that holds hw_handoff, default is the grandparent of the xpr
+#       (<repo>/proj/<project>.xpr); pass it for deeper projects such as
+#       <repo>/proj/<variant>/<project>.xpr
 
-set idx [lsearch ${argv} "-x"]
-if {${idx} != -1} {
-    set xpr_path [file normalize [lindex ${argv} [expr {${idx}+1}]]]
-} else {
+
+# Helpers
+
+# Return the value following flag in argv, or default when flag is absent
+proc arg_value {flag default} {
+    global argv
+    set idx [lsearch ${argv} ${flag}]
+    if {${idx} == -1} {
+        return ${default}
+    }
+    return [lindex ${argv} [expr {${idx}+1}]]
+}
+
+
+# Arguments
+
+set xpr_path [arg_value "-x" ""]
+if {${xpr_path} eq ""} {
     puts "ERROR: -x <xpr_path> is required"
     exit 1
 }
+set xpr_path [file normalize ${xpr_path}]
 
-set idx [lsearch ${argv} "-o"]
-if {${idx} != -1} {
-    set output_name [lindex ${argv} [expr {${idx}+1}]]
-} else {
-    set output_name ""
-}
+set output_name [arg_value "-o" ""]
+set repo_path [file normalize [arg_value "-r" [file join [file dirname ${xpr_path}] ..]]]
 
-set idx [lsearch ${argv} "-r"]
-if {${idx} != -1} {
-    set repo_path [file normalize [lindex ${argv} [expr {${idx}+1}]]]
-} else {
-    set repo_path [file normalize [file join [file dirname ${xpr_path}] ..]]
-}
+
+# Export
 
 puts "INFO: Opening project ${xpr_path}"
 open_project -quiet ${xpr_path}
