@@ -1,73 +1,76 @@
-# Note: argument order does not matter when setting argv; all arguments are optional
-# Usage (No Defaults):
-#   set argv "-r <repo_path> -x <xpr_path> -v <vivado_version> -b -no-block -ip-cache <dir>"
-#   source digilent_vivado_checkout.tcl
-# Usage (All Defaults):
-#   set argv ""
-#   source digilent_vivado_checkout.tcl
-# TODO: add debug flag for argument checking
+# checkout.tcl
+#
+# Recreate the Vivado project from the sources of the repository,
+# optionally building it.
+#
+# Usage (argument order does not matter, all are optional):
+#   set argv "-r <repo_path> -x <xpr_path> -v <version> -b -no-block \
+#             -ip-cache <dir> -D <NAME> <VALUE>"
+#   source checkout.tcl
+#
+# Arguments:
+#   -r         repo, default is the parent of the scripts directory
+#   -x         project file, default is <repo>/proj/<repo name>.xpr
+#   -v         Vivado version, default is the running one
+#   -b         build the project after checkout
+#   -no-block  with -b, do not wait for the build to finish
+#   -ip-cache  IP output repository, default is <repo>/proj/cache;
+#              use one per project when checking out in parallel
+#   -D         set a global Tcl variable for the block design script,
+#              repeatable, NAME and VALUE are two separate tokens
+#              (vivado.bat splits "NAME=VALUE" on "=")
 
-# Handle repo_path argument
-set idx [lsearch ${argv} "-r"]
-if {${idx} != -1} {
-    set repo_path [glob -nocomplain [file normalize [lindex ${argv} [expr {${idx}+1}]]]]
+
+# Helpers
+
+# Return 1 when flag is present in argv
+proc arg_present {flag} {
+    global argv
+    return [expr {[lsearch ${argv} ${flag}] != -1}]
+}
+
+# Return the value following flag in argv, or default when flag is absent
+proc arg_value {flag default} {
+    global argv
+    set idx [lsearch ${argv} ${flag}]
+    if {${idx} == -1} {
+        return ${default}
+    }
+    return [lindex ${argv} [expr {${idx}+1}]]
+}
+
+
+# Arguments
+
+if {[arg_present "-r"]} {
+    set repo_path [glob -nocomplain [file normalize [arg_value "-r" ""]]]
 } else {
-    # Default
     set repo_path [file normalize [file dirname [info script]]/..]
 }
 
-# Handle xpr_path argument
-set idx [lsearch ${argv} "-x"]
-if {${idx} != -1} {
-    set xpr_path [file normalize [lindex ${argv} [expr {${idx}+1}]]]
+if {[arg_present "-x"]} {
+    set xpr_path [file normalize [arg_value "-x" ""]]
 } else {
-    # Default
-    set xpr_path [file join ${repo_path} proj [file tail $repo_path]].xpr]
+    set xpr_path [file join ${repo_path} proj [file tail $repo_path]].xpr
 }
 
-# Handle vivado_version argument
-set idx [lsearch ${argv} "-v"]
-if {${idx} != -1} {
-    set vivado_version [lindex ${argv} [expr {${idx}+1}]]
+if {[arg_present "-v"]} {
+    set vivado_version [arg_value "-v" ""]
 } else {
-    # Default
     set vivado_version [version -short]
 }
 
-# Handle build flag
-set idx [lsearch ${argv} "-b"]
-if {${idx} != -1} {
-    set build_when_checked_out 1
+set build_when_checked_out [arg_present "-b"]
+set wait_on_build [expr {![arg_present "-no-block"]}]
+
+if {[arg_present "-ip-cache"]} {
+    set ip_cache_dir [file normalize [arg_value "-ip-cache" ""]]
 } else {
-    # Default
-    set build_when_checked_out 0
+    set ip_cache_dir [file normalize "$repo_path/proj/cache"]
 }
 
-# Handle no block flag
-set idx [lsearch ${argv} "-no-block"]
-if {${idx} != -1} {
-    set wait_on_build 0
-} else {
-    # Default
-    set wait_on_build 1
-}
-
-# Handle -D NAME VALUE global Tcl variable overrides (repeatable, two
-# separate arguments). These are set in the global namespace before the
-# block design script(s) under src/bd are sourced below, so a project's own
-# BD script can read them to switch build-time options without hand-editing
-# the BD script itself (e.g. `-D MY_OPTION 1`, read via
-# `if {[info exists ::MY_OPTION]} {...}` in that project's BD script). This
-# script has no built-in knowledge of what any given NAME means -- that's
-# entirely up to each project's own BD script.
-#
-# NOTE: this intentionally takes NAME and VALUE as two separate tokens
-# ("-D NAME VALUE"), NOT a single "-D NAME=VALUE" token. On Windows,
-# vivado.bat's own batch-file argument parsing splits unquoted command-line
-# tokens on "=" (in addition to whitespace), so a single "-D NAME=VALUE"
-# token silently arrives here as two separate argv elements ("NAME" and
-# "VALUE") with no reliable way to rejoin them. Two tokens from the start
-# sidesteps that entirely and behaves identically on every platform.
+# Set the -D variables before the block design script is sourced, so it can
+# switch build-time options with [info exists ::NAME]
 set idx 0
 while {[set idx [lsearch -start $idx ${argv} "-D"]] != -1} {
     set define_name [lindex ${argv} [expr {${idx}+1}]]
@@ -82,108 +85,89 @@ while {[set idx [lsearch -start $idx ${argv} "-D"]] != -1} {
     }
 }
 
-# Other variables
 set vivado_year [lindex [split $vivado_version "."] 0]
 set proj_name [file rootname [file tail $xpr_path]]
 
-puts "INFO: Creating new project \"$proj_name\" in [file dirname $xpr_path]"
 
-# Create project
+# Project
+
+puts "INFO: Creating new project \"$proj_name\" in [file dirname $xpr_path]"
 create_project $proj_name [file dirname $xpr_path]
 
 source $repo_path/project_info.tcl
 
-# Capture board information for the project
 puts "INFO: Capturing board information from $repo_path/project_info.tcl"
 set_project_properties_post_create_project $proj_name
 set obj [get_projects $proj_name]
 set part_name [get_property "part" $obj]
 
-# Uncomment the following 3 lines to greatly increase build speed while working with IP cores (and/or block diagrams)
+# Faster builds with IPs and block designs
 puts "INFO: Configuring project IP handling properties"
 set_property "corecontainer.enable" "0" $obj
 set_property "ip_cache_permissions" "read write" $obj
-# The out-of-context IP cache is shared by every project checked out from
-# this repo, which is what makes a second checkout fast. That sharing is
-# only safe while checkouts run one at a time: two vivado processes
-# populating one cache concurrently can read a half-written entry. Callers
-# that build several projects in parallel therefore pass -ip-cache to give
-# each project its own cache directory.
-set idx [lsearch ${argv} "-ip-cache"]
-if {${idx} != -1} {
-    set ip_cache_dir [file normalize [lindex ${argv} [expr {${idx}+1}]]]
-} else {
-    set ip_cache_dir [file normalize "$repo_path/proj/cache"]
-}
+# The cache is shared by all checkouts of this repo, which speeds up the next
+# one, but only one checkout at a time may populate it
 puts "INFO: Using IP cache directory $ip_cache_dir"
 set_property "ip_output_repo" $ip_cache_dir $obj
 
-# Create 'sources_1' fileset (if not found)
 if {[string equal [get_filesets -quiet sources_1] ""]} {
     puts "INFO: Creating sources_1 fileset"
     create_fileset -srcset sources_1
 }
 
-# Create 'constrs_1' fileset (if not found)
 if {[string equal [get_filesets -quiet constrs_1] ""]} {
     puts "INFO: Creating constrs_1 fileset"
     create_fileset -constrset constrs_1
 }
 
-# Capture project-specific IP settings
 puts "INFO: capturing IP-related settings from $repo_path/project_info.tcl"
 set_project_properties_pre_add_repo $proj_name
 
-# Set IP repository paths
+
+# Sources
+
 puts "INFO: Setting IP repository paths"
 set obj [get_filesets sources_1]
 set_property "ip_repo_paths" "[file normalize $repo_path/repo]" $obj
 
-# Refresh IP Repositories
 puts "INFO: Refreshing IP repositories"
 update_ip_catalog -rebuild
 
-# Add hardware description language sources
 puts "INFO: Adding HDL sources"
 add_files -quiet -norecurse [glob -nocomplain $repo_path/src/hdl/*.v]
 add_files -quiet -norecurse [glob -nocomplain $repo_path/src/hdl/*.vhd]
 add_files -quiet -norecurse [glob -nocomplain $repo_path/src/hdl/*.sv]
 
-# Add IPs
-# TODO: handle IP core-container files
+# Other sources saved by checkin, e.g. memory initialization files and headers
+puts "INFO: Adding other sources"
+add_files -quiet -norecurse [lsearch -inline -all -not -glob [glob -nocomplain -types f $repo_path/src/other/*] *.keep]
+
 puts "INFO: Adding XCI IP sources"
 add_files -quiet [glob -nocomplain $repo_path/src/ip/*/*.xci]
+add_files -quiet [glob -nocomplain $repo_path/src/ip/*/*.xcix]
 
-# Add constraints
 puts "INFO: Adding constraints"
 add_files -quiet -norecurse -fileset constrs_1 [glob -nocomplain $repo_path/src/constraints/*.xdc]
 
-# Recreate block design
-# TODO: handle multiple block designs
+
+# Block design
+
+# Only one block design is supported, more than one is an error
 set ipi_tcl_files [glob -nocomplain "$repo_path/src/bd/*.tcl"]
 set ipi_bd_files [glob -nocomplain "$repo_path/src/bd/*/*.bd"]
 if {[llength $ipi_tcl_files] > 1} {
-    # TODO: quit and log the error
-    puts "ERROR: This script cannot handle projects containing more than one block design! More than one tcl script foudn in src/bd"
+    error "This script cannot handle projects containing more than one block design! More than one tcl script found in src/bd"
 } elseif {[llength $ipi_tcl_files] == 1} {
-    # Use TCL script to rebuild block design
     puts "INFO: Rebuilding block design from script"
-    # Create local source directory for bd
-    if {[file exist "[file rootname $xpr_path].srcs"] == 0} {
-        file mkdir "[file rootname $xpr_path].srcs"
-    }
-    if {[file exist "[file rootname $xpr_path].srcs/sources_1"] == 0} {
-        file mkdir "[file rootname $xpr_path].srcs/sources_1"
-    }
-    if {[file exist "[file rootname $xpr_path].srcs/sources_1/bd"] == 0} {
-        file mkdir "[file rootname $xpr_path].srcs/sources_1/bd"
-    }
-    # Force Non-Remote BD Flow
+    set srcs_dir "[file rootname $xpr_path].srcs"
+    file mkdir "$srcs_dir/sources_1/bd"
+
+    # The script must run from sources_1, with the remote bd flow off
     set origin_dir [pwd]
-    cd "[file rootname $xpr_path].srcs/sources_1"
+    cd "$srcs_dir/sources_1"
     set run_remote_bd_flow 0
     if {[set result [catch { source [lindex $ipi_tcl_files 0] } resulttext]]} {
-        # remember global error state
+        # Keep the error state of the script, but restore the directory first
         set einfo $::errorInfo
         set ecode $::errorCode
         catch {cd $origin_dir}
@@ -191,10 +175,8 @@ if {[llength $ipi_tcl_files] > 1} {
     }
     cd $origin_dir
 } elseif {[llength $ipi_bd_files] > 1} {
-    # TODO: quit and log the error
-    puts "ERROR: This script cannot handle projects containing more than one block design! More than one bd file foudn in src/bd"
+    error "This script cannot handle projects containing more than one block design! More than one bd file found in src/bd"
 } elseif {[llength $ipi_bd_files] == 1} {
-    # Add block design from .bd file and sources
     puts "INFO: Rebuilding block design from BD fileset"
     add_files -norecurse -quiet -fileset sources_1 [glob -nocomplain $repo_path/src/bd/*/*.bd]
     open_bd_design [glob -nocomplain $repo_path/src/bd/*/*.bd]
@@ -207,25 +189,26 @@ if {[llength $ipi_tcl_files] > 1} {
     }
 }
 
-# Make sure IPs are upgraded to the most recent version
+# Upgrade the locked IPs to the most recent version
 foreach ip [get_ips -filter "IS_LOCKED==1"] {
     upgrade_ip -vlnv [get_property UPGRADE_VERSIONS $ip] $ip
     export_ip_user_files -of_objects $ip -no_script -sync -force -quiet
 }
 
-# Generate the wrapper for the root design
-catch {
-	# catch block prevents projects without a block design from erroring at this step
-	set bd_name [get_bd_designs -of_objects [get_bd_cells /]]
-	set bd_file [get_files $bd_name.bd]
-	set wrapper_file [make_wrapper -files $bd_file -top -force]
-	import_files -quiet -force -norecurse $wrapper_file
+# Generate the wrapper of the root design, projects without a block design are skipped
+if {[llength [get_files -quiet -filter "NAME=~*.bd && NAME!~*/bd/*/ip/*"]] == 1} {
+    set bd_name [get_bd_designs -of_objects [get_bd_cells /]]
+    set bd_file [get_files $bd_name.bd]
+    set wrapper_file [make_wrapper -files $bd_file -top -force]
+    import_files -quiet -force -norecurse $wrapper_file
 
-	set obj [get_filesets sources_1]
-	set_property "top" "${bd_name}_wrapper" $obj
+    set obj [get_filesets sources_1]
+    set_property "top" "${bd_name}_wrapper" $obj
 }
 
-# Create 'synth_1' run (if not found)
+
+# Runs
+
 if {[string equal [get_runs -quiet synth_1] ""]} {
     puts "INFO: Creating synth_1 run"
     create_run -name synth_1 -part $part_name -flow "Vivado Synthesis $vivado_year" -strategy "Vivado Synthesis Defaults" -constrset constrs_1
@@ -237,11 +220,9 @@ puts "INFO: Configuring synth_1 run"
 set obj [get_runs synth_1]
 set_property "part" $part_name $obj
 
-# Set the current synth run
 puts "INFO: Setting current synthesis run"
 current_run -synthesis [get_runs synth_1]
 
-# Create 'impl_1' run (if not found)
 if {[string equal [get_runs -quiet impl_1] ""]} {
     puts "INFO: Creating impl_1 run"
     create_run -name impl_1 -part $part_name -flow "Vivado Implementation $vivado_year" -strategy "Vivado Implementation Defaults" -constrset constrs_1 -parent_run synth_1
@@ -253,19 +234,20 @@ puts "INFO: Configuring impl_1 run"
 set obj [get_runs impl_1]
 set_property "part" $part_name $obj
 
-# Set the current impl run
 puts "INFO: Setting current implementation run"
 current_run -implementation [get_runs impl_1]
 
-# Capture project-specific IP settings
 puts "INFO: capturing run settings from $repo_path/project_info.tcl"
 set_project_properties_post_create_runs $proj_name
 
-# Import source files for simulation
+
+# Simulation
+
+# One simulation set per folder in src/sim, the top is the file named *_tb
 set sim_dirs [glob -nocomplain -type d $repo_path/src/sim/*]
 foreach sim_dir $sim_dirs {
     set sim_name [file tail $sim_dir]
-    # Note: sim_1 already exists in a fresh project, testing for existance and only creating when a name is not found helps avoid an error
+    # sim_1 already exists in a fresh project, creating it again is an error
     if {[get_fileset $sim_name] == ""} {
         puts "INFO: Simulation set $sim_name does not exist, creating it"
         create_fileset -simset $sim_name
@@ -290,25 +272,69 @@ foreach sim_dir $sim_dirs {
     update_compile_order -fileset $sim_name
 }
 
-# Get the post_build script path
-set post_build_script_path [file join ${repo_path} post_build.tcl]
-set post_build_script [glob -nocomplain ${post_build_script_path}]
 
-# Launch a build if -b was specified
+# Build
+
+set post_build_script [glob -nocomplain [file join ${repo_path} post_build.tcl]]
+
+# Return the runs that failed at startup with "tclapp::load_apps failed".
+# Concurrent vivado starts can clobber the per-user tclapp manifest, which is
+# unrelated to the design, so those runs are safe to repeat.
+proc startup_failed_runs {} {
+    set failed [list]
+    foreach r [get_runs] {
+        if {[string match "*Complete*" [get_property STATUS ${r}]]} {
+            continue
+        }
+        set log [file join [get_property DIRECTORY ${r}] runme.log]
+        if {![file exists ${log}]} {
+            continue
+        }
+        set fid [open ${log} r]
+        set text [read ${fid}]
+        close ${fid}
+        if {[string first "tclapp::load_apps" ${text}] != -1} {
+            lappend failed ${r}
+        }
+    }
+    return ${failed}
+}
+
+# Build to the bitstream and wait, repeating once after a startup failure
+proc build_and_wait {} {
+    set attempt 1
+    while {1} {
+        launch_runs -to_step write_bitstream impl_1
+        if {![catch {wait_on_run impl_1} err]} {
+            return
+        }
+        set retry_runs [startup_failed_runs]
+        if {${attempt} >= 2 || [llength ${retry_runs}] == 0} {
+            error ${err}
+        }
+        puts "WARNING: Run(s) [join ${retry_runs} {, }] failed at startup, repeating them once"
+        foreach r ${retry_runs} {
+            reset_run ${r}
+        }
+        reset_run synth_1
+        reset_run impl_1
+        incr attempt
+    }
+}
+
 if {${build_when_checked_out}} {
-    launch_runs -to_step write_bitstream impl_1
-    # Wait until the project has been built if -no-block wasn't specified
     if {${wait_on_build}} {
-        wait_on_run impl_1
+        build_and_wait
         puts "INFO: Build complete"
 
-        # If it exists, run the post_build script. This can be used to export 
+        # The post_build script can export the handoff and release files
         if {${post_build_script} ne ""} {
             source ${post_build_script}
         } else {
             puts "INFO: No post_build script found"
         }
     } else {
+        launch_runs -to_step write_bitstream impl_1
         if {${post_build_script} ne ""} {
             puts "WARNING: Build launched but ${post_build_script} has not been run"
             puts "         After the bitstream has been generated, run the command 'source ${post_build_script}'"
