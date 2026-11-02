@@ -3,7 +3,6 @@
 
 # Whitelist this stuff
 !License.txt
-!config.ini
 !*.tcl
 !*.py
 !*README.md
